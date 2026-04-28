@@ -30,7 +30,6 @@ async function renameTitle(page: import('@playwright/test').Page, value: string)
   await expect(brandButton).toContainText(value);
 }
 
-
 test('tool loads with correct title', async ({ page }) => {
   await page.goto('/');
   const title = await page.title();

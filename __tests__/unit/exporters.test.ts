@@ -210,7 +210,9 @@ describe('exporters', () => {
   it('exports pdf successfully', async () => {
     const el = document.createElement('div');
     el.textContent = 'pdf text';
-    Object.defineProperty(el, 'getBoundingClientRect', { value: () => ({ width: 960, height: 480 }) });
+    Object.defineProperty(el, 'getBoundingClientRect', {
+      value: () => ({ width: 960, height: 480 }),
+    });
     Object.defineProperty(el, 'scrollWidth', { value: 960 });
     Object.defineProperty(el, 'clientWidth', { value: 960 });
     Object.defineProperty(el, 'scrollHeight', { value: 480 });
@@ -227,7 +229,12 @@ describe('exporters', () => {
     expect(html).toHaveBeenCalledTimes(1);
     expect(addImage).not.toHaveBeenCalled();
     expect(text).toHaveBeenCalledTimes(1);
-    expect(text).toHaveBeenCalledWith(expect.stringContaining('pdf text'), expect.any(Number), expect.any(Number), expect.any(Object));
+    expect(text).toHaveBeenCalledWith(
+      expect.stringContaining('pdf text'),
+      expect.any(Number),
+      expect.any(Number),
+      expect.any(Object)
+    );
     expect(result.filename).toBe('x.pdf');
   });
 
@@ -235,7 +242,9 @@ describe('exporters', () => {
     const el = document.createElement('div');
     el.textContent =
       ' First line with extra spaces \n\nSecond line\nThird line with trailing spaces    ';
-    Object.defineProperty(el, 'getBoundingClientRect', { value: () => ({ width: 700, height: 900 }) });
+    Object.defineProperty(el, 'getBoundingClientRect', {
+      value: () => ({ width: 700, height: 900 }),
+    });
     Object.defineProperty(el, 'scrollWidth', { value: 700 });
     Object.defineProperty(el, 'clientWidth', { value: 700 });
     Object.defineProperty(el, 'scrollHeight', { value: 900 });
@@ -259,7 +268,9 @@ describe('exporters', () => {
 
   it('falls back to rasterized pdf when dom rendering fails', async () => {
     const el = document.createElement('div');
-    Object.defineProperty(el, 'getBoundingClientRect', { value: () => ({ width: 960, height: 480 }) });
+    Object.defineProperty(el, 'getBoundingClientRect', {
+      value: () => ({ width: 960, height: 480 }),
+    });
     Object.defineProperty(el, 'scrollWidth', { value: 960 });
     Object.defineProperty(el, 'clientWidth', { value: 960 });
     Object.defineProperty(el, 'scrollHeight', { value: 480 });
