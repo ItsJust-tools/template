@@ -30,6 +30,7 @@ async function renameTitle(page: import('@playwright/test').Page, value: string)
   await expect(brandButton).toContainText(value);
 }
 
+
 test('tool loads with correct title', async ({ page }) => {
   await page.goto('/');
   const title = await page.title();
@@ -286,6 +287,49 @@ test('export json download triggers', async ({ page }, testInfo) => {
     const [download] = await Promise.all([page.waitForEvent('download'), jsonOption.click()]);
     expect(download.suggestedFilename()).toMatch(/\.json$/);
   }
+});
+
+test('image export downloads trigger for screenshot formats', async ({ page }, testInfo) => {
+  await page.goto('/');
+  await ensureToolbarInteractable(page);
+
+  if (testInfo.project.name.includes('Mobile')) {
+    await expect(page.getByRole('button', { name: /export/i })).toBeVisible();
+    return;
+  }
+
+  const expected: Array<{ option: RegExp; ext: RegExp }> = [
+    { option: /PNG/, ext: /\.png$/i },
+    { option: /JPEG/, ext: /\.(jpg|jpeg)$/i },
+    { option: /webp/i, ext: /\.webp$/i },
+  ];
+
+  for (const format of expected) {
+    await ensureToolbarInteractable(page);
+    await page.getByRole('button', { name: /export/i }).click({ force: true });
+    const option = page.getByRole('option', { name: format.option });
+    await expect(option).toBeVisible();
+    const [download] = await Promise.all([page.waitForEvent('download'), option.click()]);
+    expect(download.suggestedFilename()).toMatch(format.ext);
+  }
+});
+
+test('pdf export download triggers', async ({ page }, testInfo) => {
+  await page.goto('/');
+  await ensureToolbarInteractable(page);
+
+  const exportButton = page.getByRole('button', { name: /export/i });
+  await exportButton.click({ force: true });
+
+  if (testInfo.project.name.includes('Mobile')) {
+    await expect(exportButton).toBeVisible();
+    return;
+  }
+
+  const pdfOption = page.getByRole('option', { name: /pdf/i });
+  await expect(pdfOption).toBeVisible();
+  const [download] = await Promise.all([page.waitForEvent('download'), pdfOption.click()]);
+  expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
 });
 
 test('404 page works', async ({ page }) => {

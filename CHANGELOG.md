@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- PDF export now attempts DOM-based rendering first and only falls back to raster image embedding when needed.
+- PDF export now adds a searchable text layer derived from canvas DOM text so text content can be indexed/copied in successful exports.
+- Expanded export test coverage for screenshot downloads (PNG, JPEG, WEBP), PDF download flow, large-canvas image dimensions, and long multiline PDF text handling.
+
 ## [1.1.0] - 2026-04-28
 
 ### Changed
