@@ -16,6 +16,7 @@ import { myTool } from '@/tool/tool-definition';
 import { ToolCanvas } from '@/tool/components/tool-canvas';
 import { ToolSidebar } from '@/tool/components/tool-sidebar';
 import { ToolToolbar } from '@/tool/components/tool-toolbar';
+import type { ExporterLoader } from '@itsjust/core';
 
 vi.mock('next/link', () => ({
   default: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
@@ -30,13 +31,25 @@ vi.mock('@/app/tool-client-wrapper', () => ({
 }));
 
 describe('app and seo', () => {
+  const getOgImageUrl = (
+    images: NonNullable<NonNullable<ReturnType<typeof generateToolMetadata>['openGraph']>['images']>
+  ): string | undefined => {
+    const list = Array.isArray(images) ? images : [images];
+    const first = list[0];
+    if (!first) return undefined;
+    if (typeof first === 'string') return first;
+    if (first instanceof URL) return first.toString();
+    return String(first.url);
+  };
+
   it('builds metadata and json-ld values', () => {
     const metadata = generateToolMetadata(toolConfig);
     const jsonLd = generateJsonLd(toolConfig);
 
     expect(metadata.creator).toBe(toolConfig.name);
     expect(metadata.metadataBase?.toString()).toBe('http://localhost:3000/');
-    expect(metadata.openGraph?.images?.[0]?.url).toContain('/og.svg');
+    const ogUrl = metadata.openGraph?.images ? getOgImageUrl(metadata.openGraph.images) : undefined;
+    expect(ogUrl).toContain('/og.svg');
     expect(jsonLd.url).toBe('http://localhost:3000');
     expect(jsonLd.featureList.length).toBeGreaterThan(0);
   });
@@ -87,9 +100,14 @@ describe('app and seo', () => {
       error: 'Invalid data format: missing title',
     });
     expect(myTool.serialize({ title: 'x' })).toContain('"title": "x"');
-    expect(myTool.exporters).toHaveLength(4);
-    const png = await myTool.exporters[0].loader();
-    expect(png.default.format).toBe('png');
+    const exporters = myTool.exporters ?? [];
+    expect(exporters).toHaveLength(4);
+    const first = exporters[0];
+    expect(first).toBeDefined();
+    if (!first) throw new Error('missing exporter');
+    const png = await (first.loader as ExporterLoader)();
+    const resolved = 'default' in png ? png.default : png.exporter;
+    expect(resolved.format).toBe('png');
   });
 
   it('renders tool components', () => {

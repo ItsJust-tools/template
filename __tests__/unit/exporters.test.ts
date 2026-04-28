@@ -7,6 +7,7 @@ import {
   createCanvasExporter,
 } from '@/tool/exporters/utils';
 import pdfExporter from '@/tool/exporters/pdf';
+import type { ExportOptions } from '@itsjust/core';
 
 const html2canvasMock = vi.fn();
 
@@ -23,6 +24,11 @@ vi.mock('jspdf', () => ({
 }));
 
 describe('exporters', () => {
+  const makeOptions = (overrides: Partial<ExportOptions> = {}): ExportOptions => ({
+    format: 'png',
+    ...overrides,
+  });
+
   beforeEach(() => {
     html2canvasMock.mockReset();
     addImage.mockReset();
@@ -53,7 +59,9 @@ describe('exporters', () => {
     input.type = 'password';
     el.appendChild(input);
 
-    await expect(renderCanvas(el, {})).rejects.toThrowError(/sensitive elements detected/);
+    await expect(renderCanvas(el, makeOptions())).rejects.toThrowError(
+      /sensitive elements detected/
+    );
   });
 
   it('renders canvas via html2canvas with capture dimensions', async () => {
@@ -70,10 +78,16 @@ describe('exporters', () => {
     const canvas = document.createElement('canvas');
     html2canvasMock.mockResolvedValue(canvas);
 
-    const out = await renderCanvas(el, { allowSensitiveData: true, scale: 3, background: '#fff' });
+    const out = await renderCanvas(
+      el,
+      makeOptions({ allowSensitiveData: true, scale: 3, background: '#fff' })
+    );
     expect(out).toBe(canvas);
     expect(html2canvasMock).toHaveBeenCalledTimes(1);
-    expect(html2canvasMock.mock.calls[0][1]).toMatchObject({
+    const firstCall = html2canvasMock.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    if (!firstCall) throw new Error('missing html2canvas call');
+    expect(firstCall[1]).toMatchObject({
       scale: 3,
       width: 140,
       height: 95,
@@ -91,14 +105,20 @@ describe('exporters', () => {
       .mockImplementation((cb) => cb(new Blob(['ok'], { type: 'image/png' })));
 
     const exporter = createCanvasExporter('png', 'image/png', 'png');
-    const ok = await exporter.export(el, { filename: 'a.png', allowSensitiveData: true });
+    const ok = await exporter.export(
+      el,
+      makeOptions({ format: 'png', filename: 'a.png', allowSensitiveData: true })
+    );
     expect(ok.success).toBe(true);
     expect(ok.filename).toBe('a.png');
 
     toBlobOk.mockRestore();
     vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((cb) => cb(null));
 
-    const failed = await exporter.export(el, { filename: 'b.png', allowSensitiveData: true });
+    const failed = await exporter.export(
+      el,
+      makeOptions({ format: 'png', filename: 'b.png', allowSensitiveData: true })
+    );
     expect(failed.success).toBe(false);
     expect(failed.error).toContain('Failed to create blob');
   });
@@ -112,7 +132,10 @@ describe('exporters', () => {
     html2canvasMock.mockResolvedValue(canvas);
     output.mockReturnValue(new Blob(['pdf'], { type: 'application/pdf' }));
 
-    const result = await pdfExporter.export(el, { filename: 'x.pdf', allowSensitiveData: true });
+    const result = await pdfExporter.export(
+      el,
+      makeOptions({ format: 'pdf', filename: 'x.pdf', allowSensitiveData: true })
+    );
     expect(result.success).toBe(true);
     expect(jsPdfCtor).toHaveBeenCalledTimes(1);
     expect(addImage).toHaveBeenCalledTimes(1);

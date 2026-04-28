@@ -26,10 +26,16 @@ const mockToolbarActions = { canUndo: true, canRedo: true, onUndo: vi.fn(), onRe
 vi.mock('@itsjust/core', () => ({
   ToolShell: ({ actions, toolbar, sidebar, canvas, statusBar }: Record<string, unknown>) => (
     <div>
-      <button type="button" onClick={() => (actions as Record<string, () => void>).onBrandClick?.()}>
+      <button
+        type="button"
+        onClick={() => (actions as Record<string, () => void>).onBrandClick?.()}
+      >
         rename-start
       </button>
-      <button type="button" onClick={() => (actions as Record<string, () => void>).onBrandCommit?.()}>
+      <button
+        type="button"
+        onClick={() => (actions as Record<string, () => void>).onBrandCommit?.()}
+      >
         rename-commit
       </button>
       <div>{toolbar as ReactNode}</div>

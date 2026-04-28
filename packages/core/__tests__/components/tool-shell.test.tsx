@@ -74,12 +74,7 @@ describe('ToolShell', () => {
   });
 
   it('toggles sidebar from toolbar button', () => {
-    render(
-      <ToolShell
-        config={config}
-        sidebar={<button type="button">inside-sidebar</button>}
-      />
-    );
+    render(<ToolShell config={config} sidebar={<button type="button">inside-sidebar</button>} />);
 
     const toggle = screen.getByLabelText('Close sidebar');
     fireEvent.click(toggle);
