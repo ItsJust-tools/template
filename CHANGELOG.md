@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.8] - 2026-05-05
+
+### Changed
+
+- Replaced all hand-coded SVG icon components with `lucide-react` icons for consistent, high-quality rendering across the toolbar (Undo, Redo, Settings, Sun, Moon).
+- `@itsjust/core` now depends on `lucide-react@^0.471.0`.
+
+### Fixed
+
+- Toolbar brand text now correctly displays the edited title from `actions.brandValue` when not in editing mode, instead of always falling back to the static config name.
+
 ## [1.2.4] - 2026-05-05
 
 ### Added
