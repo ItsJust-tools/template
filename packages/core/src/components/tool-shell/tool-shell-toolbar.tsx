@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useShell } from './tool-shell-context';
-import { UndoIcon, RedoIcon, SidebarIcon, SunIcon, MoonIcon } from './tool-shell-icons';
+import { UndoIcon, RedoIcon, SettingsIcon, SunIcon, MoonIcon } from './tool-shell-icons';
 import { useTheme } from '../theme-provider/theme-provider';
 import { t } from '../../i18n/strings';
 
@@ -95,7 +95,7 @@ function ContrastToggle() {
 }
 
 export function Toolbar({ children }: { children?: ReactNode }) {
-  const { config, actions, sidebarOpen, toggleSidebar } = useShell();
+  const { config, actions, sidebarOpen, toggleSidebar, isMobile } = useShell();
   const brandText = config.theme?.brand ?? config.name;
   const brandIcon = config.theme?.icon;
   const brandUrl = config.theme?.brandUrl;
@@ -106,6 +106,14 @@ export function Toolbar({ children }: { children?: ReactNode }) {
       {brandText}
     </>
   );
+
+  const sidebarLabel = sidebarOpen
+    ? isMobile
+      ? t('hideOptions')
+      : t('closeSidebar')
+    : isMobile
+      ? t('showOptions')
+      : t('toggleSidebar');
 
   return (
     <header className="tool-shell-toolbar" role="toolbar" aria-label={t('toolToolbar')}>
@@ -180,10 +188,10 @@ export function Toolbar({ children }: { children?: ReactNode }) {
             type="button"
             className="toolbar-btn toolbar-btn-sidebar"
             onClick={toggleSidebar}
-            aria-label={sidebarOpen ? t('closeSidebar') : t('toggleSidebar')}
+            aria-label={sidebarLabel}
           >
-            <SidebarIcon open={sidebarOpen} />
-            <TooltipLabel text={sidebarOpen ? t('closeSidebar') : t('toggleSidebar')} />
+            <SettingsIcon />
+            <TooltipLabel text={sidebarLabel} />
           </button>
         )}
         {children}

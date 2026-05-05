@@ -1,4 +1,5 @@
 import type { ExportFormat, ExportOptions, ExportResult, Exporter } from '@itsjust/core';
+import { toBlob } from 'html-to-image';
 
 export function formatExportError(error: unknown, format: string): string {
   const base = error instanceof Error ? error.message : `${format} export failed`;
@@ -15,48 +16,51 @@ export function throwIfAborted(signal?: AbortSignal): void {
   }
 }
 
-function getCaptureDimensions(element: HTMLElement): { width: number; height: number } {
-  const rect = element.getBoundingClientRect();
-  const width = Math.max(Math.ceil(rect.width), element.scrollWidth, element.clientWidth);
-  const height = Math.max(Math.ceil(rect.height), element.scrollHeight, element.clientHeight);
+function replaceTextareaWithDiv(container: HTMLElement): void {
+  const textarea = container.querySelector('textarea');
+  if (!(textarea instanceof HTMLTextAreaElement)) return;
 
-  return { width, height };
+  const replacement = document.createElement('div');
+  replacement.className = 'notepad-textarea-replacement';
+  replacement.textContent = textarea.value;
+
+  const computed = window.getComputedStyle(textarea);
+  replacement.style.font = computed.font;
+  replacement.style.lineHeight = computed.lineHeight;
+  replacement.style.letterSpacing = computed.letterSpacing;
+  replacement.style.color = computed.color;
+  replacement.style.background = computed.background;
+  replacement.style.padding = computed.padding;
+  replacement.style.whiteSpace = 'pre-wrap';
+  replacement.style.overflowWrap = 'anywhere';
+  replacement.style.wordBreak = 'break-word';
+  replacement.style.width = '100%';
+  replacement.style.maxWidth = '100%';
+  replacement.style.border = 'none';
+  replacement.style.outline = 'none';
+  replacement.style.margin = '0';
+  replacement.style.boxSizing = 'border-box';
+  replacement.style.minHeight = '0';
+  replacement.style.flex = 'none';
+  replacement.style.height = 'auto';
+
+  textarea.parentNode?.replaceChild(replacement, textarea);
 }
 
-export async function loadHtml2canvas(
-  retries = 2,
-  signal?: AbortSignal
-): Promise<typeof import('html2canvas').default> {
-  throwIfAborted(signal);
-  let lastError: unknown;
-  for (let i = 0; i <= retries; i++) {
-    try {
-      const mod = await import('html2canvas');
-      throwIfAborted(signal);
-      if (!mod.default) {
-        throw new Error('html2canvas default export is missing');
-      }
-      return mod.default;
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') throw error;
-      lastError = error;
-      if (i < retries) {
-        await new Promise((resolve, reject) => {
-          const base = 350 * 2 ** i;
-          const jitter = Math.floor(Math.random() * 200);
-          const t = setTimeout(resolve, base + jitter);
-          signal?.addEventListener('abort', () => {
-            clearTimeout(t);
-            reject(new DOMException('Export aborted', 'AbortError'));
-          });
-        });
-      }
-    }
-  }
-  throw lastError ?? new Error('Failed to load html2canvas');
+export function createStyledClone(element: HTMLElement): HTMLElement {
+  const container = document.createElement('div');
+  container.className = 'export-clone-container';
+  document.body.appendChild(container);
+
+  const clone = element.cloneNode(true) as HTMLElement;
+  container.appendChild(clone);
+
+  replaceTextareaWithDiv(clone);
+
+  return container;
 }
 
-export async function renderCanvas(
+export async function renderToImage(
   element: HTMLElement,
   options: ExportOptions
 ): Promise<HTMLCanvasElement> {
@@ -67,27 +71,50 @@ export async function renderCanvas(
       throw new Error('Export blocked: sensitive elements detected');
     }
   }
-  const html2canvas = await loadHtml2canvas(2, options.signal);
-  throwIfAborted(options.signal);
-  const { width, height } = getCaptureDimensions(element);
-  return html2canvas(element, {
-    scale: options.scale ?? 2,
-    backgroundColor: options.background ?? '#ffffff',
-    logging: false,
-    useCORS: true,
-    width,
-    height,
-    windowWidth: width,
-    windowHeight: height,
-    scrollX: 0,
-    scrollY: 0,
-    onclone: (doc) => {
-      const clonedElement = doc.getElementById(element.id);
-      if (clonedElement instanceof HTMLElement) {
-        clonedElement.style.overflow = 'visible';
-      }
-    },
-  });
+
+  const container = createStyledClone(element);
+  const clone = container.firstElementChild as HTMLElement;
+  if (!clone) {
+    container.remove();
+    throw new Error('Failed to create export clone');
+  }
+
+  try {
+    throwIfAborted(options.signal);
+
+    const blob = await toBlob(clone, {
+      pixelRatio: options.scale ?? 2,
+      backgroundColor: options.background ?? '#ffffff',
+      cacheBust: true,
+      skipFonts: false,
+    });
+
+    if (!blob) {
+      throw new Error('Failed to create image blob');
+    }
+
+    const canvas = document.createElement('canvas');
+    const img = new Image();
+
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(blob);
+    });
+
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Failed to get canvas context');
+    }
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(img.src);
+
+    return canvas;
+  } finally {
+    container.remove();
+  }
 }
 
 export function createCanvasExporter(
@@ -100,7 +127,7 @@ export function createCanvasExporter(
     format,
     export: async (element, options): Promise<ExportResult> => {
       try {
-        const canvas = await renderCanvas(element, options);
+        const canvas = await renderToImage(element, options);
         const quality = options.quality ?? defaultQuality;
         const blob = await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob(

@@ -124,6 +124,25 @@ export function SidebarIcon({ open }: { open: boolean }) {
 }
 SidebarIcon.displayName = 'SidebarIcon';
 
+export function SettingsIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="8" cy="8" r="2" />
+      <path d="M12.93 9A5 5 0 0 0 13 8a5 5 0 0 0-.07-1l1.7-1a.5.5 0 0 0 .11-.86l-1.45-1.45a.5.5 0 0 0-.86.11l-1 1.7A5 5 0 0 0 9 3.07V1.5a.5.5 0 0 0-.5-.5h-2a.5.5 0 0 0-.5.5v1.57a5 5 0 0 0-1.57.91l-1-1.7a.5.5 0 0 0-.86-.11L.07 4.64a.5.5 0 0 0 .11.86l1.7 1A5 5 0 0 0 3 8a5 5 0 0 0 .07 1l-1.7 1a.5.5 0 0 0-.11.86l1.45 1.45a.5.5 0 0 0 .86-.11l1-1.7A5 5 0 0 0 7 12.93V14.5a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5v-1.57a5 5 0 0 0 1.57-.91l1 1.7a.5.5 0 0 0 .86.11l1.45-1.45a.5.5 0 0 0-.11-.86l-1.7-1z" />
+    </svg>
+  );
+}
+SettingsIcon.displayName = 'SettingsIcon';
+
 export function SunIcon({ className }: { className?: string }) {
   return (
     <svg

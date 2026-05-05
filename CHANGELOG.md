@@ -13,6 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PDF export now adds a searchable text layer derived from canvas DOM text so text content can be indexed/copied in successful exports.
 - Expanded export test coverage for screenshot downloads (PNG, JPEG, WEBP), PDF download flow, large-canvas image dimensions, and long multiline PDF text handling.
 
+### Added
+
+- **Notepad Tool**: Built a complete single-purpose notepad tool (`simple-notepad`).
+  - Clean textarea-based canvas with monospace font and adjustable font size (8–72px).
+  - Toolbar with font-size controls (A− / A+) and help link.
+  - Sidebar showing live document stats: words, characters, characters without spaces, and lines.
+  - Full export support: JSON, PNG, JPEG, WebP, PDF (all client-side via lazy-loaded exporters).
+  - URL-based sharing with compressed state and automatic hydration on load.
+  - Undo/redo, auto-save, dark mode, and high-contrast accessibility support.
+  - Updated tests: 92 passing across unit and component suites.
+
 ## [1.1.0] - 2026-04-28
 
 ### Changed

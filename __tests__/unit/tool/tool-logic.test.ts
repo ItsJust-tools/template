@@ -1,55 +1,55 @@
 import { describe, it, expect } from 'vitest';
 import { createMockToolState } from '@itsjust/core/testing';
-import { myTool } from '@/tool/tool-definition';
-import type { ToolState } from '@/tool/types';
+import { notepadTool } from '@/tool/tool-definition';
+import type { NotepadState } from '@/tool/types';
 
-describe('Tool logic', () => {
+describe('Notepad logic', () => {
   it('initializes with default state', () => {
-    const state = createMockToolState<ToolState>({
-      title: 'My Tool',
+    const state = createMockToolState<NotepadState>({
+      text: '',
     });
 
-    expect(state.data.title).toBe('My Tool');
+    expect(state.data.text).toBe('');
   });
 
-  it('updates title', () => {
-    const state = createMockToolState<ToolState>({
-      title: 'My Tool',
+  it('updates text', () => {
+    const state = createMockToolState<NotepadState>({
+      text: '',
     });
 
-    state.setData((prev) => ({ ...prev, title: 'New Name' }));
-    expect(state.data.title).toBe('New Name');
+    state.setData((prev) => ({ ...prev, text: 'Hello world' }));
+    expect(state.data.text).toBe('Hello world');
   });
 
   it('supports undo/redo', () => {
-    const state = createMockToolState<ToolState>({
-      title: 'First',
+    const state = createMockToolState<NotepadState>({
+      text: 'First',
     });
 
-    state.setData((prev) => ({ ...prev, title: 'Second' }));
-    expect(state.data.title).toBe('Second');
+    state.setData((prev) => ({ ...prev, text: 'Second' }));
+    expect(state.data.text).toBe('Second');
     expect(state.canUndo).toBe(true);
 
     state.undo();
-    expect(state.data.title).toBe('First');
+    expect(state.data.text).toBe('First');
     expect(state.canRedo).toBe(true);
 
     state.redo();
-    expect(state.data.title).toBe('Second');
+    expect(state.data.text).toBe('Second');
   });
 });
 
-describe('Tool deserialize', () => {
-  it('accepts valid tool state object', () => {
-    const result = myTool.deserialize({ title: 'Valid Title' });
+describe('Notepad deserialize', () => {
+  it('accepts valid notepad state object', () => {
+    const result = notepadTool.deserialize({ text: 'Valid' });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.title).toBe('Valid Title');
+      expect(result.data.text).toBe('Valid');
     }
   });
 
   it('rejects null data', () => {
-    const result = myTool.deserialize(null);
+    const result = notepadTool.deserialize(null);
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error).toContain('Invalid data');
@@ -57,23 +57,23 @@ describe('Tool deserialize', () => {
   });
 
   it('rejects non-object data', () => {
-    const result = myTool.deserialize('string');
+    const result = notepadTool.deserialize('string');
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error).toContain('Invalid data');
     }
   });
 
-  it('rejects object without title', () => {
-    const result = myTool.deserialize({ count: 42 });
+  it('rejects object without text', () => {
+    const result = notepadTool.deserialize({ count: 42 });
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error).toContain('Invalid data');
     }
   });
 
-  it('rejects object with non-string title', () => {
-    const result = myTool.deserialize({ title: 123 });
+  it('rejects object with non-string text', () => {
+    const result = notepadTool.deserialize({ text: 123 });
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error).toContain('Invalid data');
@@ -81,8 +81,8 @@ describe('Tool deserialize', () => {
   });
 
   it('serializes state to JSON string', () => {
-    const json = myTool.serialize({ title: 'Test' });
+    const json = notepadTool.serialize({ text: 'Test' });
     expect(() => JSON.parse(json)).not.toThrow();
-    expect(JSON.parse(json)).toEqual({ title: 'Test' });
+    expect(JSON.parse(json)).toEqual({ text: 'Test' });
   });
 });

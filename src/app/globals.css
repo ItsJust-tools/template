@@ -528,6 +528,230 @@ body {
   color: var(--accent);
 }
 
+/* --- Notepad Canvas --- */
+
+.notepad-canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.notepad-textarea {
+  flex: 1;
+  width: 100%;
+  min-height: 100%;
+  padding: clamp(1rem, 2.5vw, 2rem);
+  background: transparent;
+  color: var(--foreground);
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: ui-monospace, Menlo, Monaco, 'Cascadia Code', 'Segoe UI Mono', monospace;
+  line-height: 1.6;
+  caret-color: var(--accent);
+}
+
+.notepad-textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+/* --- Notepad Toolbar --- */
+
+.notepad-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-left: 0.5rem;
+  margin-left: 0.25rem;
+  border-left: 1px solid var(--border);
+}
+
+/* --- Notepad Sidebar --- */
+
+.notepad-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.stats-list {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.stat-row dt {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.stat-row dd {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.sidebar-font-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sidebar-font-controls .font-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 1.75rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.sidebar-font-controls .font-btn:hover {
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.sidebar-font-controls .font-btn:active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.sidebar-font-controls .font-size-display {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+  min-width: 2.5rem;
+  text-align: center;
+  user-select: none;
+}
+
+/* --- Print / Export Styles --- */
+
+@media print {
+  .tool-shell-toolbar,
+  .tool-shell-sidebar,
+  .tool-shell-statusbar,
+  .sidebar-backdrop,
+  .sidebar-header,
+  .share-dropdown-menu,
+  .readonly-banner,
+  .toast-container,
+  .keyboard-shortcuts-overlay {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .tool-shell-body {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  .tool-shell-canvas {
+    background: #fff !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .notepad-canvas {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    background: #fff !important;
+  }
+
+  .notepad-textarea {
+    flex: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+    border: none !important;
+    outline: none !important;
+    resize: none !important;
+    background: transparent !important;
+    color: #000 !important;
+    padding: 1rem !important;
+    font-family: ui-monospace, Menlo, Monaco, 'Cascadia Code', 'Segoe UI Mono', monospace !important;
+    line-height: 1.6 !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .notepad-textarea::placeholder {
+    color: transparent !important;
+  }
+}
+
+/* --- Export helper: off-screen styled clone --- */
+
+.export-clone-container {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.export-clone-container .notepad-canvas {
+  overflow: visible;
+  height: auto;
+  min-height: 0;
+}
+
+.export-clone-container .notepad-textarea-replacement {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  width: 100%;
+  max-width: 100%;
+  padding: clamp(1rem, 2.5vw, 2rem);
+  font-family: ui-monospace, Menlo, Monaco, 'Cascadia Code', 'Segoe UI Mono', monospace;
+  line-height: 1.6;
+  color: var(--foreground);
+  background: transparent;
+  border: none;
+  outline: none;
+  margin: 0;
+  box-sizing: border-box;
+}
+
 /* --- Share page states --- */
 
 .share-error {

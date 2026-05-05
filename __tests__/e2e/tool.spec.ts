@@ -19,32 +19,23 @@ async function ensureToolbarInteractable(page: import('@playwright/test').Page) 
   }
 }
 
-async function renameTitle(page: import('@playwright/test').Page, value: string) {
+async function typeInNotepad(page: import('@playwright/test').Page, text: string) {
   await ensureToolbarInteractable(page);
-  const brandButton = page.locator('.toolbar-brand-button');
-  await brandButton.click();
-  const titleInput = page.locator('.toolbar-brand-input');
-  await expect(titleInput).toBeVisible();
-  await titleInput.fill(value);
-  await titleInput.press('Enter');
-  await expect(brandButton).toContainText(value);
+  const textarea = page.locator('.notepad-textarea');
+  await textarea.fill(text);
 }
 
 test('tool loads with correct title', async ({ page }) => {
   await page.goto('/');
   const title = await page.title();
-  expect(title).toContain('My Tool');
+  expect(title).toContain('Notepad');
 });
 
-test('title input is editable', async ({ page }, testInfo) => {
+test('textarea is editable', async ({ page }) => {
   await page.goto('/');
-  if (testInfo.project.name.includes('Mobile')) {
-    await expect(page.locator('.toolbar-brand-button')).toBeHidden();
-    await expect(page.locator('.toolbar-brand')).toBeHidden();
-    await expect(page.getByRole('toolbar', { name: 'Tool toolbar' })).toBeVisible();
-    return;
-  }
-  await renameTitle(page, 'Hello World');
+  const textarea = page.locator('.notepad-textarea');
+  await textarea.fill('Hello Notepad');
+  await expect(textarea).toHaveValue('Hello Notepad');
 });
 
 test('undo/redo buttons enable/disable correctly', async ({ page }, testInfo) => {
@@ -65,10 +56,10 @@ test('undo/redo buttons enable/disable correctly', async ({ page }, testInfo) =>
     await fileInput.setInputFiles({
       name: 'undo-mobile.json',
       mimeType: 'application/json',
-      buffer: Buffer.from(JSON.stringify({ title: 'undo mobile' })),
+      buffer: Buffer.from(JSON.stringify({ text: 'undo mobile', fontSize: 16 })),
     });
   } else {
-    await renameTitle(page, 'hello world');
+    await typeInNotepad(page, 'hello world');
   }
 
   await expect(undoButton).toBeEnabled();
@@ -188,11 +179,11 @@ test('robots.txt is accessible', async ({ page }) => {
   expect(content).toMatch(/User-[Aa]gent/);
 });
 
-test('keyboard shortcuts overlay opens and closes', async ({ page, browserName }, testInfo) => {
+test('keyboard shortcuts overlay opens and closes', async ({ page, browserName }, _testInfo) => {
   if (browserName !== 'chromium') return;
   await page.goto('/');
   await ensureToolbarInteractable(page);
-  if (testInfo.project.name.includes('Mobile')) {
+  if (_testInfo.project.name.includes('Mobile')) {
     await expect(page.getByRole('button', { name: /keyboard shortcuts/i })).toBeVisible();
     return;
   }
@@ -217,10 +208,10 @@ test('undo/redo via keyboard shortcuts', async ({ page }, testInfo) => {
     await fileInput.setInputFiles({
       name: 'keyboard-mobile.json',
       mimeType: 'application/json',
-      buffer: Buffer.from(JSON.stringify({ title: 'keyboard mobile' })),
+      buffer: Buffer.from(JSON.stringify({ text: 'keyboard mobile' })),
     });
   } else {
-    await renameTitle(page, 'keyboard test');
+    await typeInNotepad(page, 'keyboard test');
   }
 
   const undoButton = page.getByRole('button', { name: 'Undo (Ctrl+Z)' });
@@ -243,7 +234,7 @@ test('mobile sidebar backdrop closes sidebar', async ({ page }) => {
   await ensureToolbarInteractable(page);
   const sidebar = page.locator('.tool-shell-sidebar');
 
-  await page.keyboard.press('Control+b');
+  await page.locator('[aria-label="Show options"]').click();
   await expect(sidebar).toHaveClass(/open/);
 
   await page.locator('.sidebar-backdrop').evaluate((el) => (el as HTMLElement).click());
@@ -254,9 +245,8 @@ test('import from json file works', async ({ page }) => {
   await page.goto('/');
   await ensureToolbarInteractable(page);
 
-  const fileContent = JSON.stringify({ title: 'Imported Title' });
+  const fileContent = JSON.stringify({ text: 'Imported Note' });
 
-  // Use setInputFiles on the hidden file input
   const fileInput = page.locator('input[type="file"]');
   await fileInput.evaluate((el: HTMLInputElement) => {
     el.style.display = 'block';
@@ -268,24 +258,19 @@ test('import from json file works', async ({ page }) => {
     buffer: Buffer.from(fileContent),
   });
 
-  await expect.poll(() => page.title()).toContain('Imported Title');
+  await expect.poll(() => page.locator('.notepad-textarea').inputValue()).toContain('Imported Note');
 });
 
-test('export json download triggers', async ({ page }, testInfo) => {
+test('export json download triggers', async ({ page }) => {
   await page.goto('/');
   await ensureToolbarInteractable(page);
 
   const exportButton = page.getByRole('button', { name: /export/i });
   await exportButton.click({ force: true });
 
-  if (testInfo.project.name.includes('Mobile')) {
-    await expect(exportButton).toBeVisible();
-    return;
-  } else {
-    const jsonOption = page.getByRole('option', { name: /JSON/ });
-    const [download] = await Promise.all([page.waitForEvent('download'), jsonOption.click()]);
-    expect(download.suggestedFilename()).toMatch(/\.json$/);
-  }
+  const jsonOption = page.getByRole('option', { name: /JSON/ });
+  const [download] = await Promise.all([page.waitForEvent('download'), jsonOption.click()]);
+  expect(download.suggestedFilename()).toMatch(/\.json$/);
 });
 
 test('image export downloads trigger for screenshot formats', async ({ page }, testInfo) => {
@@ -313,7 +298,7 @@ test('image export downloads trigger for screenshot formats', async ({ page }, t
   }
 });
 
-test('pdf export download triggers', async ({ page }, testInfo) => {
+test('pdf export triggers print dialog', async ({ page }, testInfo) => {
   await page.goto('/');
   await ensureToolbarInteractable(page);
 
@@ -327,8 +312,45 @@ test('pdf export download triggers', async ({ page }, testInfo) => {
 
   const pdfOption = page.getByRole('option', { name: /pdf/i });
   await expect(pdfOption).toBeVisible();
-  const [download] = await Promise.all([page.waitForEvent('download'), pdfOption.click()]);
-  expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
+
+  // Intercept the hidden print iframe via MutationObserver + console log
+  const consolePromise = new Promise<string>((resolve) => {
+    const handler = (msg: import('@playwright/test').ConsoleMessage) => {
+      const text = msg.text();
+      if (text.includes('__printIntercepted__')) {
+        page.off('console', handler);
+        resolve(text);
+      }
+    };
+    page.on('console', handler);
+  });
+
+  await page.evaluate(() => {
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node instanceof HTMLIFrameElement) {
+            try {
+              const cw = (node as HTMLIFrameElement).contentWindow;
+              if (cw) {
+                cw.print = () => {
+                  console.log('__printIntercepted__');
+                };
+              }
+            } catch {
+              // cross-origin iframe, ignore
+            }
+          }
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
+
+  await pdfOption.click();
+
+  const consoleText = await consolePromise;
+  expect(consoleText).toContain('__printIntercepted__');
 });
 
 test('404 page works', async ({ page }) => {
@@ -339,7 +361,7 @@ test('404 page works', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
 });
 
-test('visual regression — default view', async ({ page, browserName }, testInfo) => {
+test('visual regression — default view', async ({ page, browserName }) => {
   if (browserName !== 'chromium') return;
   await page.goto('/');
   await page.waitForSelector('.tool-shell-canvas');

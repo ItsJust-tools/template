@@ -12,14 +12,10 @@ const nextConfig: NextConfig = {
 
   // Sensible security headers for production
   async headers() {
-    const isDev = process.env.NODE_ENV === 'development';
-    const scriptSrc = isDev
-      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
-      : "script-src 'self'";
     const csp = [
       "default-src 'self'",
-      scriptSrc,
-      "style-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline'",
       "img-src 'self' blob: data:",
       "font-src 'self'",
       "connect-src 'self'",

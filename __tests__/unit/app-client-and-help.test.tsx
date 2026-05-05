@@ -24,20 +24,8 @@ const mockImport = vi.fn();
 const mockToolbarActions = { canUndo: true, canRedo: true, onUndo: vi.fn(), onRedo: vi.fn() };
 
 vi.mock('@itsjust/core', () => ({
-  ToolShell: ({ actions, toolbar, sidebar, canvas, statusBar }: Record<string, unknown>) => (
+  ToolShell: ({ toolbar, sidebar, canvas, statusBar }: Record<string, unknown>) => (
     <div>
-      <button
-        type="button"
-        onClick={() => (actions as Record<string, () => void>).onBrandClick?.()}
-      >
-        rename-start
-      </button>
-      <button
-        type="button"
-        onClick={() => (actions as Record<string, () => void>).onBrandCommit?.()}
-      >
-        rename-commit
-      </button>
       <div>{toolbar as ReactNode}</div>
       <div>{sidebar as ReactNode}</div>
       <div>{canvas as ReactNode}</div>
@@ -51,7 +39,7 @@ vi.mock('@itsjust/core', () => ({
   ),
   useTool: () => ({
     state: {
-      data: { title: 'Original Title' },
+      data: { text: 'Hello' },
       setData: mockSetData,
       isDirty: false,
       lastSaved: 'just now',
@@ -67,20 +55,20 @@ vi.mock('@itsjust/core', () => ({
 
 vi.mock('@/tool', () => ({
   toolConfig: {
-    id: 'tool-id',
-    name: 'Tool Name',
-    version: '1.1.0',
+    id: 'simple-notepad',
+    name: 'Notepad',
+    version: '1.0.0',
     features: { sidebar: true },
-    theme: { brand: 'Tool Name' },
+    theme: { brand: 'Notepad' },
   },
   templateBaseVersion: '1.1.0',
-  myTool: {
+  notepadTool: {
     serialize: (state: unknown) => JSON.stringify(state),
-    deserialize: () => ({ success: true, data: { title: 'From Shared Url' } }),
+    deserialize: () => ({ success: true, data: { text: 'From Shared Url' } }),
   },
-  ToolCanvas: ({ state }: { state: { title: string } }) => <div>canvas:{state.title}</div>,
+  ToolCanvas: ({ text }: { text: string }) => <div>canvas:{text}</div>,
   ToolToolbar: () => <div>toolbar</div>,
-  ToolSidebar: ({ state }: { state: { title: string } }) => <div>sidebar:{state.title}</div>,
+  ToolSidebar: ({ text }: { text: string }) => <div>sidebar:{text}</div>,
 }));
 
 describe('app client and help page', () => {
@@ -110,15 +98,12 @@ describe('app client and help page', () => {
     expect(screen.getByTestId('dynamic-tool-client')).toBeInTheDocument();
   });
 
-  it('handles rename and share flows in tool client', async () => {
+  it('handles share flow in tool client', async () => {
     render(<ToolClient />);
 
     expect(screen.getByText('toolbar')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('rename-start'));
-    fireEvent.click(screen.getByText('rename-commit'));
     fireEvent.click(screen.getByText('trigger-share'));
 
-    expect(mockSetData).toHaveBeenCalled();
     expect(mockToast).toHaveBeenCalled();
   });
 });

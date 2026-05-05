@@ -1,31 +1,54 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   formatExportError,
   throwIfAborted,
-  loadHtml2canvas,
-  renderCanvas,
+  createStyledClone,
+  renderToImage,
   createCanvasExporter,
 } from '@/tool/exporters/utils';
 import pdfExporter from '@/tool/exporters/pdf';
 import type { ExportOptions } from '@itsjust/core';
 
-const html2canvasMock = vi.fn();
+const toBlobMock = vi.fn();
 
-vi.mock('html2canvas', () => ({
-  default: (...args: unknown[]) => html2canvasMock(...args),
+vi.mock('html-to-image', () => ({
+  toBlob: (...args: unknown[]) => toBlobMock(...args),
+  toPng: vi.fn(),
 }));
 
-const addImage = vi.fn();
-const output = vi.fn();
-const html = vi.fn();
-const setFontSize = vi.fn();
-const setTextColor = vi.fn();
-const text = vi.fn();
-const jsPdfCtor = vi.fn(() => ({ addImage, output, html, setFontSize, setTextColor, text }));
+function mockImageClass(width: number, height: number) {
+  return class MockImage {
+    onload: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    naturalWidth = width;
+    naturalHeight = height;
+    private _src = '';
+    get src() {
+      return this._src;
+    }
+    set src(value: string) {
+      this._src = value;
+      queueMicrotask(() => this.onload?.());
+    }
+  };
+}
 
-vi.mock('jspdf', () => ({
-  jsPDF: jsPdfCtor,
-}));
+function createFakeCanvasContext() {
+  return {
+    drawImage: vi.fn(),
+    fillRect: vi.fn(),
+    fillStyle: '',
+    clearRect: vi.fn(),
+    getImageData: vi.fn(() => ({ data: new Uint8ClampedArray(4) })),
+    putImageData: vi.fn(),
+    createImageData: vi.fn(() => ({ data: new Uint8ClampedArray(4) })),
+    setTransform: vi.fn(),
+    resetTransform: vi.fn(),
+    scale: vi.fn(),
+    translate: vi.fn(),
+    rotate: vi.fn(),
+  } as unknown as CanvasRenderingContext2D;
+}
 
 describe('exporters', () => {
   const makeOptions = (overrides: Partial<ExportOptions> = {}): ExportOptions => ({
@@ -33,15 +56,25 @@ describe('exporters', () => {
     ...overrides,
   });
 
+  let getContextSpy: ReturnType<typeof vi.spyOn>;
+  let canvasToBlobSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
-    html2canvasMock.mockReset();
-    addImage.mockReset();
-    output.mockReset();
-    html.mockReset();
-    setFontSize.mockReset();
-    setTextColor.mockReset();
-    text.mockReset();
-    jsPdfCtor.mockClear();
+    toBlobMock.mockReset();
+    document.body.innerHTML = '';
+    getContextSpy = vi
+      .spyOn(HTMLCanvasElement.prototype, 'getContext')
+      .mockImplementation(() => createFakeCanvasContext());
+    canvasToBlobSpy = vi
+      .spyOn(HTMLCanvasElement.prototype, 'toBlob')
+      .mockImplementation((cb) => cb(new Blob(['fake'], { type: 'image/png' })));
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = '';
+    getContextSpy?.mockRestore();
+    canvasToBlobSpy?.mockRestore();
+    vi.restoreAllMocks();
   });
 
   it('formats cors errors with guidance', () => {
@@ -55,62 +88,81 @@ describe('exporters', () => {
     expect(() => throwIfAborted(ctrl.signal)).toThrowError(/Export aborted/);
   });
 
-  it('loads html2canvas module', async () => {
-    html2canvasMock.mockResolvedValue(document.createElement('canvas'));
-    const mod = await loadHtml2canvas();
-    expect(typeof mod).toBe('function');
-  });
-
   it('blocks sensitive exports by default', async () => {
     const el = document.createElement('div');
     const input = document.createElement('input');
     input.type = 'password';
     el.appendChild(input);
 
-    await expect(renderCanvas(el, makeOptions())).rejects.toThrowError(
+    await expect(renderToImage(el, makeOptions(), 'image/png')).rejects.toThrowError(
       /sensitive elements detected/
     );
   });
 
-  it('renders canvas via html2canvas with capture dimensions', async () => {
+  it('creates a styled clone with textarea replaced by div', () => {
+    const container = document.createElement('div');
+    container.className = 'notepad-canvas';
+    const textarea = document.createElement('textarea');
+    textarea.className = 'notepad-textarea';
+    textarea.value = 'Hello world';
+    container.appendChild(textarea);
+    document.body.appendChild(container);
+
+    const cloneContainer = createStyledClone(container);
+    const clone = cloneContainer.firstElementChild as HTMLElement;
+
+    expect(clone).toBeDefined();
+    expect(clone.querySelector('textarea')).toBeNull();
+    const replacement = clone.querySelector('.notepad-textarea-replacement');
+    expect(replacement).not.toBeNull();
+    expect(replacement?.textContent).toBe('Hello world');
+
+    cloneContainer.remove();
+    container.remove();
+  });
+
+  it('renders image via html-to-image with correct options', async () => {
     const el = document.createElement('div');
-    el.id = 'capture-id';
-    Object.defineProperty(el, 'getBoundingClientRect', {
-      value: () => ({ width: 120, height: 80 }),
-    });
-    Object.defineProperty(el, 'scrollWidth', { value: 140 });
-    Object.defineProperty(el, 'clientWidth', { value: 110 });
-    Object.defineProperty(el, 'scrollHeight', { value: 95 });
-    Object.defineProperty(el, 'clientHeight', { value: 90 });
+    el.className = 'notepad-canvas';
 
-    const canvas = document.createElement('canvas');
-    html2canvasMock.mockResolvedValue(canvas);
+    // Mock html-to-image to return a simple blob
+    toBlobMock.mockResolvedValue(new Blob(['fake-image'], { type: 'image/png' }));
 
-    const out = await renderCanvas(
+    // Mock Image loading since we create an Image from the blob
+    const originalImage = globalThis.Image;
+    vi.stubGlobal('Image', mockImageClass(200, 100));
+
+    const result = await renderToImage(
       el,
-      makeOptions({ allowSensitiveData: true, scale: 3, background: '#fff' })
+      makeOptions({ allowSensitiveData: true, scale: 3, background: '#fff' }),
+      'image/png'
     );
-    expect(out).toBe(canvas);
-    expect(html2canvasMock).toHaveBeenCalledTimes(1);
-    const firstCall = html2canvasMock.mock.calls[0];
+
+    expect(result).toBeInstanceOf(HTMLCanvasElement);
+    expect(result.width).toBe(200);
+    expect(result.height).toBe(100);
+    expect(toBlobMock).toHaveBeenCalledTimes(1);
+    const firstCall = toBlobMock.mock.calls[0];
     expect(firstCall).toBeDefined();
-    if (!firstCall) throw new Error('missing html2canvas call');
+    if (!firstCall) throw new Error('missing toBlob call');
     expect(firstCall[1]).toMatchObject({
-      scale: 3,
-      width: 140,
-      height: 95,
+      pixelRatio: 3,
       backgroundColor: '#fff',
+      cacheBust: true,
+      skipFonts: false,
     });
+
+    vi.stubGlobal('Image', originalImage);
   });
 
   it('creates image exporter success and failure results', async () => {
     const el = document.createElement('div');
-    const canvas = document.createElement('canvas');
-    html2canvasMock.mockResolvedValue(canvas);
+    el.className = 'notepad-canvas';
 
-    const toBlobOk = vi
-      .spyOn(HTMLCanvasElement.prototype, 'toBlob')
-      .mockImplementation((cb) => cb(new Blob(['ok'], { type: 'image/png' })));
+    toBlobMock.mockResolvedValue(new Blob(['fake-image'], { type: 'image/png' }));
+
+    const originalImage = globalThis.Image;
+    vi.stubGlobal('Image', mockImageClass(100, 50));
 
     const exporter = createCanvasExporter('png', 'image/png', 'png');
     const ok = await exporter.export(
@@ -120,20 +172,28 @@ describe('exporters', () => {
     expect(ok.success).toBe(true);
     expect(ok.filename).toBe('a.png');
 
-    toBlobOk.mockRestore();
-    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((cb) => cb(null));
+    // Force failure by making toBlob return null
+    toBlobMock.mockResolvedValue(null);
 
     const failed = await exporter.export(
       el,
       makeOptions({ format: 'png', filename: 'b.png', allowSensitiveData: true })
     );
     expect(failed.success).toBe(false);
-    expect(failed.error).toContain('Failed to create blob');
+    expect(failed.error).toContain('Failed to create image blob');
+
+    vi.stubGlobal('Image', originalImage);
   });
 
   it('passes format-specific mime type and quality to canvas toBlob', async () => {
     const el = document.createElement('div');
-    html2canvasMock.mockResolvedValue(document.createElement('canvas'));
+    el.className = 'notepad-canvas';
+
+    toBlobMock.mockResolvedValue(new Blob(['fake-image'], { type: 'image/png' }));
+
+    const originalImage = globalThis.Image;
+    vi.stubGlobal('Image', mockImageClass(10, 10));
+
     const toBlobSpy = vi
       .spyOn(HTMLCanvasElement.prototype, 'toBlob')
       .mockImplementation((cb) => cb(new Blob(['ok'])));
@@ -147,153 +207,73 @@ describe('exporters', () => {
     expect(toBlobSpy).toHaveBeenNthCalledWith(1, expect.any(Function), 'image/jpeg', 0.92);
     expect(toBlobSpy).toHaveBeenNthCalledWith(2, expect.any(Function), 'image/webp', 0.9);
     toBlobSpy.mockRestore();
+    vi.stubGlobal('Image', originalImage);
   });
 
-  it('captures large image export dimensions for long content', async () => {
-    const el = document.createElement('div');
-    el.id = 'long-capture';
-    el.textContent = Array.from({ length: 300 }, (_, i) => `line-${i}`).join('\n');
-    Object.defineProperty(el, 'getBoundingClientRect', {
-      value: () => ({ width: 320, height: 240 }),
-    });
-    Object.defineProperty(el, 'scrollWidth', { value: 1600 });
-    Object.defineProperty(el, 'clientWidth', { value: 320 });
-    Object.defineProperty(el, 'scrollHeight', { value: 3200 });
-    Object.defineProperty(el, 'clientHeight', { value: 240 });
-
-    const canvas = document.createElement('canvas');
-    html2canvasMock.mockResolvedValue(canvas);
-    const toBlobSpy = vi
-      .spyOn(HTMLCanvasElement.prototype, 'toBlob')
-      .mockImplementation((cb) => cb(new Blob(['ok'], { type: 'image/png' })));
-
-    const exporter = createCanvasExporter('png', 'image/png', 'png');
-    const result = await exporter.export(
-      el,
-      makeOptions({ format: 'png', filename: 'long.png', allowSensitiveData: true })
-    );
-
-    expect(result.success).toBe(true);
-    expect(result.filename).toBe('long.png');
-    const firstCall = html2canvasMock.mock.calls[0];
-    expect(firstCall).toBeDefined();
-    if (!firstCall) throw new Error('missing html2canvas call');
-    expect(firstCall[1]).toMatchObject({
-      width: 1600,
-      height: 3200,
-      windowWidth: 1600,
-      windowHeight: 3200,
-    });
-    toBlobSpy.mockRestore();
-  });
-
-  it('updates cloned element overflow when capturing by id', async () => {
-    const el = document.createElement('div');
-    el.id = 'capture-me';
-    const canvas = document.createElement('canvas');
-    html2canvasMock.mockImplementation(async (_element, options) => {
-      if (!options || typeof options.onclone !== 'function') throw new Error('onclone missing');
-      const doc = document.implementation.createHTMLDocument();
-      const clone = doc.createElement('div');
-      clone.id = 'capture-me';
-      clone.style.overflow = 'hidden';
-      doc.body.appendChild(clone);
-      options.onclone(doc);
-      expect(clone.style.overflow).toBe('visible');
-      return canvas;
-    });
-
-    const out = await renderCanvas(el, makeOptions({ allowSensitiveData: true }));
-    expect(out).toBe(canvas);
-  });
-
-  it('exports pdf successfully', async () => {
+  it('exports pdf successfully via iframe print', async () => {
     const el = document.createElement('div');
     el.textContent = 'pdf text';
-    Object.defineProperty(el, 'getBoundingClientRect', {
-      value: () => ({ width: 960, height: 480 }),
+
+    const printMock = vi.fn();
+    let capturedDoc: { write: ReturnType<typeof vi.fn>; close: ReturnType<typeof vi.fn> } | null = null;
+
+    // Spy on appendChild to capture the iframe
+    const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((node) => {
+      if (node instanceof HTMLIFrameElement || (node as HTMLElement).tagName === 'IFRAME') {
+        const iframe = node as HTMLIFrameElement;
+        const mockDoc = {
+          open: vi.fn(),
+          write: vi.fn(),
+          close: vi.fn(),
+        };
+        capturedDoc = mockDoc;
+        Object.defineProperty(iframe, 'contentDocument', {
+          get: () => mockDoc,
+          configurable: true,
+        });
+        Object.defineProperty(iframe, 'contentWindow', {
+          get: () => ({ print: printMock }),
+          configurable: true,
+        });
+      }
+      return node;
     });
-    Object.defineProperty(el, 'scrollWidth', { value: 960 });
-    Object.defineProperty(el, 'clientWidth', { value: 960 });
-    Object.defineProperty(el, 'scrollHeight', { value: 480 });
-    Object.defineProperty(el, 'clientHeight', { value: 480 });
-    html.mockImplementation((_source, options) => options.callback());
-    output.mockReturnValue(new Blob(['pdf'], { type: 'application/pdf' }));
 
     const result = await pdfExporter.export(
       el,
       makeOptions({ format: 'pdf', filename: 'x.pdf', allowSensitiveData: true })
     );
+
     expect(result.success).toBe(true);
-    expect(jsPdfCtor).toHaveBeenCalledTimes(1);
-    expect(html).toHaveBeenCalledTimes(1);
-    expect(addImage).not.toHaveBeenCalled();
-    expect(text).toHaveBeenCalledTimes(1);
-    expect(text).toHaveBeenCalledWith(
-      expect.stringContaining('pdf text'),
-      expect.any(Number),
-      expect.any(Number),
-      expect.any(Object)
-    );
     expect(result.filename).toBe('x.pdf');
+    expect(printMock).toHaveBeenCalledTimes(1);
+    expect(capturedDoc?.write).toHaveBeenCalledTimes(1);
+
+    appendChildSpy.mockRestore();
   });
 
-  it('adds normalized long multiline text to pdf text layer', async () => {
+  it('returns error when pdf iframe fails to create', async () => {
     const el = document.createElement('div');
-    el.textContent =
-      ' First line with extra spaces \n\nSecond line\nThird line with trailing spaces    ';
-    Object.defineProperty(el, 'getBoundingClientRect', {
-      value: () => ({ width: 700, height: 900 }),
+
+    const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((node) => {
+      if (node instanceof HTMLIFrameElement || (node as HTMLElement).tagName === 'IFRAME') {
+        const iframe = node as HTMLIFrameElement;
+        Object.defineProperty(iframe, 'contentDocument', {
+          get: () => null,
+          configurable: true,
+        });
+      }
+      return node;
     });
-    Object.defineProperty(el, 'scrollWidth', { value: 700 });
-    Object.defineProperty(el, 'clientWidth', { value: 700 });
-    Object.defineProperty(el, 'scrollHeight', { value: 900 });
-    Object.defineProperty(el, 'clientHeight', { value: 900 });
-    html.mockImplementation((_source, options) => options.callback());
-    output.mockReturnValue(new Blob(['pdf'], { type: 'application/pdf' }));
 
     const result = await pdfExporter.export(
       el,
-      makeOptions({ format: 'pdf', filename: 'long-text.pdf', allowSensitiveData: true })
+      makeOptions({ format: 'pdf', filename: 'fail.pdf', allowSensitiveData: true })
     );
-    expect(result.success).toBe(true);
-    expect(text).toHaveBeenCalledTimes(1);
-    expect(text).toHaveBeenCalledWith(
-      'First line with extra spaces Second line Third line with trailing spaces',
-      expect.any(Number),
-      expect.any(Number),
-      expect.objectContaining({ maxWidth: expect.any(Number) })
-    );
-  });
 
-  it('falls back to rasterized pdf when dom rendering fails', async () => {
-    const el = document.createElement('div');
-    Object.defineProperty(el, 'getBoundingClientRect', {
-      value: () => ({ width: 960, height: 480 }),
-    });
-    Object.defineProperty(el, 'scrollWidth', { value: 960 });
-    Object.defineProperty(el, 'clientWidth', { value: 960 });
-    Object.defineProperty(el, 'scrollHeight', { value: 480 });
-    Object.defineProperty(el, 'clientHeight', { value: 480 });
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Failed to create print iframe');
 
-    html.mockImplementation(() => {
-      throw new Error('html render failed');
-    });
-    const canvas = document.createElement('canvas');
-    Object.defineProperty(canvas, 'width', { value: 960 });
-    Object.defineProperty(canvas, 'height', { value: 480 });
-    vi.spyOn(canvas, 'toDataURL').mockReturnValue('data:image/jpeg;base64,abc');
-    html2canvasMock.mockResolvedValue(canvas);
-    output.mockReturnValue(new Blob(['pdf'], { type: 'application/pdf' }));
-
-    const result = await pdfExporter.export(
-      el,
-      makeOptions({ format: 'pdf', filename: 'fallback.pdf', allowSensitiveData: true })
-    );
-    expect(result.success).toBe(true);
-    expect(html).toHaveBeenCalledTimes(1);
-    expect(addImage).toHaveBeenCalledTimes(1);
-    expect(text).toHaveBeenCalledTimes(0);
-    expect(result.filename).toBe('fallback.pdf');
+    appendChildSpy.mockRestore();
   });
 });

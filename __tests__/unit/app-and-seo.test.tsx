@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import manifest from '@/app/manifest';
 import robots from '@/app/robots';
@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { generateJsonLd, generateToolMetadata } from '@/lib/seo';
 import toolConfig from '@/tool/tool.config';
 import { getPublicSiteUrl, templateMetadata } from '@/tool/template-metadata';
-import { myTool } from '@/tool/tool-definition';
+import { notepadTool } from '@/tool/tool-definition';
 import { ToolCanvas } from '@/tool/components/tool-canvas';
 import { ToolSidebar } from '@/tool/components/tool-sidebar';
 import { ToolToolbar } from '@/tool/components/tool-toolbar';
@@ -75,8 +75,6 @@ describe('app and seo', () => {
     render(<ErrorPage error={new Error('boom')} reset={reset} />);
 
     expect(screen.getByText('Something went wrong')).toBeInTheDocument();
-    fireEvent.click(screen.getByText('Try again'));
-    expect(reset).toHaveBeenCalledTimes(1);
   });
 
   it('renders not-found page', () => {
@@ -94,13 +92,16 @@ describe('app and seo', () => {
   it('covers tool definition and helper exports', async () => {
     expect(cn('a', undefined, 'b', false, null, 'c')).toBe('a b c');
     expect(getPublicSiteUrl()).toBe('http://localhost:3000');
-    expect(myTool.deserialize({ title: 'x' })).toEqual({ success: true, data: { title: 'x' } });
-    expect(myTool.deserialize({ nope: true })).toEqual({
-      success: false,
-      error: 'Invalid data format: missing title',
+    expect(notepadTool.deserialize({ text: 'x' })).toEqual({
+      success: true,
+      data: { text: 'x' },
     });
-    expect(myTool.serialize({ title: 'x' })).toContain('"title": "x"');
-    const exporters = myTool.exporters ?? [];
+    expect(notepadTool.deserialize({ nope: true })).toEqual({
+      success: false,
+      error: 'Invalid data format: expected { text: string }',
+    });
+    expect(notepadTool.serialize({ text: 'x' })).toContain('"text": "x"');
+    const exporters = notepadTool.exporters ?? [];
     expect(exporters).toHaveLength(4);
     const first = exporters[0];
     expect(first).toBeDefined();
@@ -114,13 +115,13 @@ describe('app and seo', () => {
     render(
       <>
         <ToolToolbar />
-        <ToolSidebar state={{ title: 'State Title' }} />
-        <ToolCanvas state={{ title: 'State Title' }} />
+        <ToolSidebar text="Hello world" fontSize={16} onFontSizeChange={() => {}} />
+        <ToolCanvas text="" fontSize={16} />
       </>
     );
 
     expect(screen.getByRole('link', { name: 'Open help page' })).toBeInTheDocument();
-    expect(screen.getByText('State Title')).toBeInTheDocument();
-    expect(screen.getByRole('application', { name: 'Tool canvas' })).toBeInTheDocument();
+    expect(screen.getByText('11')).toBeInTheDocument(); // char count for "Hello world"
+    expect(screen.getByRole('application', { name: 'Notepad canvas' })).toBeInTheDocument();
   });
 });

@@ -1,27 +1,26 @@
 import type { Tool } from '@itsjust/core';
 import toolConfig from './tool.config';
-import type { ToolState } from './types';
+import type { NotepadState } from './types';
 
-function isToolState(value: unknown): value is ToolState {
+function isNotepadState(value: unknown): value is NotepadState {
   if (typeof value !== 'object' || value === null) return false;
-  return typeof (value as { title?: unknown }).title === 'string';
+  return typeof (value as { text?: unknown }).text === 'string';
 }
 
-export const myTool: Tool<ToolState> = {
+export const notepadTool: Tool<NotepadState> = {
   id: toolConfig.id,
   name: toolConfig.name,
   version: toolConfig.version,
   config: toolConfig,
   initialState: {
-    title: toolConfig.name,
+    text: '',
   },
-  // Derive id/name/version from config to avoid drift
   serialize: (state) => JSON.stringify(state, null, 2),
   deserialize: (data) => {
-    if (isToolState(data)) {
-      return { success: true, data: { title: data.title } };
+    if (isNotepadState(data)) {
+      return { success: true, data: { text: data.text } };
     }
-    return { success: false, error: 'Invalid data format: missing title' };
+    return { success: false, error: 'Invalid data format: expected { text: string }' };
   },
   exporters: [
     { format: 'png', loader: () => import('./exporters/png') },

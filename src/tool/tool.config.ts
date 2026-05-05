@@ -4,13 +4,10 @@ import packageJson from '../../package.json';
 export const templateBaseVersion = packageJson.version;
 
 const toolConfig = {
-  id: 'template-tool',
-  name: 'My Tool',
-  description: 'A minimal tool template — customize it to build your own tool',
-  version: '1.1.0',
-  // Core ships with JSON export only.
-  // To add image/PDF export, enable the format here and register
-  // the lazy-loaded exporter in src/tool/tool-definition.ts.
+  id: 'simple-notepad',
+  name: 'Notepad',
+  description: 'A clean, distraction-free notepad. Write, edit, and export your notes instantly.',
+  version: '1.0.0',
   exportFormats: ['json', 'png', 'jpeg', 'webp', 'pdf'],
   features: {
     export: true,
@@ -21,15 +18,15 @@ const toolConfig = {
     darkMode: true,
   },
   theme: {
-    accent: '#3b82f6',
-    accentHover: '#2563eb',
-    accentSubtle: 'rgba(59, 130, 246, 0.08)',
-    brand: 'My Tool',
-    icon: '\u{1F6E0}',
+    accent: '#10b981',
+    accentHover: '#059669',
+    accentSubtle: 'rgba(16, 185, 129, 0.08)',
+    brand: 'Notepad',
+    icon: '\u{1F4DD}',
   },
   shortcuts: [
     {
-      title: 'My Tool',
+      title: 'Notepad',
       shortcuts: [
         { keys: 'Ctrl+Shift+E', label: 'Export All', description: 'exports all formats at once' },
       ],

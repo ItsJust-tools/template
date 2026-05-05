@@ -1,3 +1,3 @@
-export interface ToolState {
-  title: string;
+export interface NotepadState {
+  text: string;
 }

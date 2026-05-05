@@ -1,96 +1,58 @@
 import type { Exporter } from '@itsjust/core';
-import { formatExportError, renderCanvas, throwIfAborted } from './utils';
+import { formatExportError, throwIfAborted } from './utils';
 
-function pxToMm(px: number): number {
-  return (px * 25.4) / 96;
-}
-
-function getElementDimensions(element: HTMLElement): { widthPx: number; heightPx: number } {
-  const rect = element.getBoundingClientRect();
-  const widthPx = Math.max(Math.ceil(rect.width), element.scrollWidth, element.clientWidth, 1);
-  const heightPx = Math.max(Math.ceil(rect.height), element.scrollHeight, element.clientHeight, 1);
-  return { widthPx, heightPx };
-}
-
-async function renderDomPdf(
-  pdf: {
-    html: (
-      source: HTMLElement,
-      options: {
-        callback: () => void;
-        margin: [number, number, number, number];
-        autoPaging: 'text';
-        x: number;
-        y: number;
-        html2canvas: {
-          scale: number;
-          backgroundColor: string;
-          useCORS: boolean;
-          logging: boolean;
-          scrollX: number;
-          scrollY: number;
-          windowWidth: number;
-          windowHeight: number;
-        };
-      }
-    ) => void;
-  },
-  element: HTMLElement,
-  options: Parameters<Exporter['export']>[1]
-): Promise<void> {
-  const { widthPx, heightPx } = getElementDimensions(element);
-  await new Promise<void>((resolve, reject) => {
+function collectStyles(): string {
+  const chunks: string[] = [];
+  for (let i = 0; i < document.styleSheets.length; i++) {
+    const sheet = document.styleSheets[i];
+    if (!sheet) continue;
     try {
-      pdf.html(element, {
-        callback: () => resolve(),
-        margin: [0, 0, 0, 0],
-        autoPaging: 'text',
-        x: 0,
-        y: 0,
-        html2canvas: {
-          scale: options.scale ?? 2,
-          backgroundColor: options.background ?? '#ffffff',
-          useCORS: true,
-          logging: false,
-          scrollX: 0,
-          scrollY: 0,
-          windowWidth: widthPx,
-          windowHeight: heightPx,
-        },
-      });
-    } catch (error) {
-      reject(error);
+      const rules = sheet.cssRules;
+      if (!rules) continue;
+      for (let j = 0; j < rules.length; j++) {
+        const rule = rules[j];
+        if (rule) chunks.push(rule.cssText);
+      }
+    } catch {
+      // Cross-origin stylesheets are skipped
     }
-  });
+  }
+  return chunks.join('\n');
 }
 
-async function renderRasterFallback(
-  pdf: { addImage: (...args: unknown[]) => void },
-  element: HTMLElement,
-  options: Parameters<Exporter['export']>[1]
-): Promise<void> {
-  const canvas = await renderCanvas(element, options);
-  const imgData = canvas.toDataURL('image/jpeg', options.quality ?? 0.92);
-  const widthMm = pxToMm(canvas.width);
-  const heightMm = pxToMm(canvas.height);
-  pdf.addImage(imgData, 'JPEG', 0, 0, widthMm, heightMm);
-}
+function createPrintClone(element: HTMLElement): string {
+  const clone = element.cloneNode(true) as HTMLElement;
 
-function addSearchableTextLayer(
-  pdf: {
-    setFontSize: (size: number) => void;
-    setTextColor: (r: number, g: number, b: number) => void;
-    text: (text: string, x: number, y: number, options?: { maxWidth?: number }) => void;
-  },
-  element: HTMLElement,
-  widthMm: number,
-  heightMm: number
-): void {
-  const text = (element.innerText || element.textContent || '').replace(/\s+/g, ' ').trim();
-  if (!text) return;
-  pdf.setFontSize(1);
-  pdf.setTextColor(255, 255, 255);
-  pdf.text(text, 0.5, Math.max(0.5, heightMm - 0.5), { maxWidth: Math.max(1, widthMm - 1) });
+  const textarea = clone.querySelector('textarea');
+  if (textarea instanceof HTMLTextAreaElement && textarea.parentNode) {
+    const replacement = document.createElement('div');
+    replacement.className = 'notepad-textarea-replacement';
+    replacement.textContent = textarea.value;
+
+    const computed = window.getComputedStyle(textarea);
+    replacement.style.font = computed.font;
+    replacement.style.lineHeight = computed.lineHeight;
+    replacement.style.letterSpacing = computed.letterSpacing;
+    replacement.style.color = computed.color;
+    replacement.style.background = 'transparent';
+    replacement.style.padding = computed.padding;
+    replacement.style.whiteSpace = 'pre-wrap';
+    replacement.style.overflowWrap = 'anywhere';
+    replacement.style.wordBreak = 'break-word';
+    replacement.style.width = '100%';
+    replacement.style.maxWidth = '100%';
+    replacement.style.border = 'none';
+    replacement.style.outline = 'none';
+    replacement.style.margin = '0';
+    replacement.style.boxSizing = 'border-box';
+    replacement.style.minHeight = '0';
+    replacement.style.flex = 'none';
+    replacement.style.height = 'auto';
+
+    textarea.parentNode.replaceChild(replacement, textarea);
+  }
+
+  return clone.outerHTML;
 }
 
 const pdfExporter: Exporter = {
@@ -98,33 +60,61 @@ const pdfExporter: Exporter = {
   export: async (element, options) => {
     try {
       throwIfAborted(options.signal);
-      const { jsPDF } = await import('jspdf');
-      const { widthPx, heightPx } = getElementDimensions(element);
-      const widthMm = pxToMm(widthPx);
-      const heightMm = pxToMm(heightPx);
-      const orientation =
-        options.orientation === 'portrait' || options.orientation === 'landscape'
-          ? options.orientation
-          : widthMm > heightMm
-            ? 'landscape'
-            : 'portrait';
-      const pdf = new jsPDF({
-        orientation,
-        unit: 'mm',
-        format: [widthMm, heightMm],
-      });
-      try {
-        await renderDomPdf(pdf, element, options);
-      } catch {
-        await renderRasterFallback(pdf, element, options);
+
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.left = '-9999px';
+      iframe.style.top = '0';
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.border = 'none';
+      iframe.style.margin = '0';
+      iframe.style.padding = '0';
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentDocument;
+      if (!doc) {
+        iframe.remove();
+        throw new Error('Failed to create print iframe');
       }
-      addSearchableTextLayer(pdf, element, widthMm, heightMm);
+
+      const theme = document.documentElement.getAttribute('data-theme') ?? '';
+      const contrast = document.documentElement.getAttribute('data-contrast') ?? '';
+
+      doc.open();
+      doc.write(`
+        <!DOCTYPE html>
+        <html data-theme="${theme}" data-contrast="${contrast}">
+        <head>
+          <style>${collectStyles()}</style>
+        </head>
+        <body>
+          <div id="print-root">${createPrintClone(element)}</div>
+        </body>
+        </html>
+      `);
+      doc.close();
+
       throwIfAborted(options.signal);
-      const blob = pdf.output('blob');
+
+      await new Promise<void>((resolve) => {
+        iframe.onload = () => resolve();
+        // Fallback in case load event doesn't fire
+        setTimeout(resolve, 100);
+      });
+
+      // Small delay to ensure styles are applied
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      throwIfAborted(options.signal);
+      iframe.contentWindow?.print();
+
+      // Cleanup after print dialog is dismissed
+      setTimeout(() => iframe.remove(), 1000);
 
       return {
         success: true,
-        data: blob,
+        data: null,
         filename: options.filename ?? `export-${Date.now()}.pdf`,
         format: 'pdf',
       };

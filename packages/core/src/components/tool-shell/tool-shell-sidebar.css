@@ -121,12 +121,15 @@
     max-height: 70vh;
     border-radius: calc(var(--radius) * 2) calc(var(--radius) * 2) 0 0;
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
-    transform: translateY(0);
+    transform: translateY(100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  .tool-shell-sidebar.open {
+    transform: translateY(0);
+  }
+
   .tool-shell-sidebar.collapsed {
-    transform: translateY(100%);
     opacity: 1;
     width: 100% !important;
     min-width: 100% !important;

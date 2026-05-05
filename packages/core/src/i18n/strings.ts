@@ -23,6 +23,8 @@ export const strings = {
     ready: 'Ready',
     closeSidebar: 'Close sidebar',
     toggleSidebar: 'Toggle sidebar',
+    showOptions: 'Show options',
+    hideOptions: 'Hide options',
     keyboardShortcuts: 'Keyboard shortcuts',
     closeShortcuts: 'Close shortcuts',
     pressToToggle: 'Press Ctrl/Cmd + ? to toggle',

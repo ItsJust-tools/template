@@ -3,7 +3,6 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type ComponentType,
@@ -14,11 +13,15 @@ import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from
 import {
   toolConfig,
   templateBaseVersion,
-  myTool,
+  notepadTool,
   ToolCanvas,
   ToolToolbar,
   ToolSidebar,
 } from '@/tool';
+
+const DEFAULT_FONT_SIZE = 16;
+const MIN_FONT_SIZE = 8;
+const MAX_FONT_SIZE = 72;
 
 export default function ToolClient() {
   const ToolShellCompat = ToolShell as unknown as ComponentType<Record<string, unknown>> & {
@@ -29,19 +32,30 @@ export default function ToolClient() {
     StatusBar?: ComponentType<{ children?: ReactNode }>;
   };
   const canvasRef = useRef<HTMLDivElement>(null);
-  const tool = useTool(myTool, canvasRef);
+  const tool = useTool(notepadTool, canvasRef);
   const setToolData = tool.state.setData;
   const showToast = tool.toast;
   const [isSharing, setIsSharing] = useState(false);
   const hasLoadedSharedState = useRef(false);
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(toolConfig.features.sidebar);
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [renameDraft, setRenameDraft] = useState(tool.state.data.title);
-  const title = tool.state.data.title.trim() || toolConfig.name;
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(
+    () => typeof window !== 'undefined' && window.innerWidth > 768 && toolConfig.features.sidebar
+  );
+  const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
+
+  const handleTextChange = useCallback(
+    (text: string) => {
+      setToolData((prev) => ({ ...prev, text }));
+    },
+    [setToolData]
+  );
+
+  const handleFontSizeChange = useCallback((delta: number) => {
+    setFontSize((prev) => Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, prev + delta)));
+  }, []);
 
   useEffect(() => {
-    document.title = title;
-  }, [title]);
+    document.title = toolConfig.name;
+  }, []);
 
   useEffect(() => {
     if (hasLoadedSharedState.current) return;
@@ -53,7 +67,7 @@ export default function ToolClient() {
       const serialized = decompressFromEncodedURIComponent(encodedState);
       if (!serialized) throw new Error('Invalid shared URL');
       const parsed: unknown = JSON.parse(serialized);
-      const deserialized = myTool.deserialize(parsed);
+      const deserialized = notepadTool.deserialize(parsed);
       if (!deserialized.success) throw new Error(deserialized.error);
       setToolData(deserialized.data);
       showToast('Loaded state from shared URL', 'success');
@@ -63,26 +77,10 @@ export default function ToolClient() {
     }
   }, [setToolData, showToast]);
 
-  const startRename = useCallback(() => {
-    setRenameDraft(tool.state.data.title);
-    setIsRenaming(true);
-  }, [tool.state.data.title]);
-
-  const commitRename = useCallback(() => {
-    const normalizedTitle = renameDraft.trim() || toolConfig.name;
-    setToolData((prev) => ({ ...prev, title: normalizedTitle }));
-    setIsRenaming(false);
-  }, [renameDraft, setToolData]);
-
-  const cancelRename = useCallback(() => {
-    setRenameDraft(tool.state.data.title);
-    setIsRenaming(false);
-  }, [tool.state.data.title]);
-
   const handleShare = useCallback(async () => {
     setIsSharing(true);
     try {
-      const serialized = myTool.serialize(tool.state.data);
+      const serialized = notepadTool.serialize(tool.state.data);
       const encodedState = compressToEncodedURIComponent(serialized);
       if (!encodedState) throw new Error('Failed to encode state for URL');
       const url = new URL(window.location.href);
@@ -93,7 +91,7 @@ export default function ToolClient() {
       const shareUrl = url.toString();
       if (navigator.share) {
         try {
-          await navigator.share({ title, url: shareUrl });
+          await navigator.share({ title: toolConfig.name, url: shareUrl });
           showToast('Shared URL ready', 'success');
           return;
         } catch (error) {
@@ -108,19 +106,7 @@ export default function ToolClient() {
     } finally {
       setIsSharing(false);
     }
-  }, [showToast, title, tool.state.data]);
-
-  const shellConfig = useMemo(
-    () => ({
-      ...toolConfig,
-      name: title,
-      theme: {
-        ...toolConfig.theme,
-        brand: title,
-      },
-    }),
-    [title]
-  );
+  }, [showToast, tool.state.data]);
 
   const toolbarContent = (
     <>
@@ -136,9 +122,22 @@ export default function ToolClient() {
     </>
   );
 
-  const sidebarContent = <ToolSidebar state={tool.state.data} />;
+  const sidebarContent = (
+    <ToolSidebar
+      text={tool.state.data.text}
+      fontSize={fontSize}
+      onFontSizeChange={handleFontSizeChange}
+    />
+  );
 
-  const canvasContent = <ToolCanvas canvasRef={canvasRef} state={tool.state.data} />;
+  const canvasContent = (
+    <ToolCanvas
+      canvasRef={canvasRef}
+      text={tool.state.data.text}
+      fontSize={fontSize}
+      onChange={handleTextChange}
+    />
+  );
 
   const statusBarContent = (
     <>
@@ -156,7 +155,7 @@ export default function ToolClient() {
           'Ready'
         )}
       </span>
-      <span className="status-slot status-slot-title">{tool.state.data.title}</span>
+      <span className="status-slot status-slot-font-size">{fontSize}px</span>
       <span className="status-slot status-slot-tool-version">Tool v{toolConfig.version}</span>
       <span className="status-slot status-slot-template-version">
         Template v{templateBaseVersion}
@@ -174,16 +173,8 @@ export default function ToolClient() {
 
   return (
     <ToolShellCompat
-      config={shellConfig}
-      actions={{
-        ...tool.toolbarActions,
-        onBrandClick: startRename,
-        isBrandEditing: isRenaming,
-        brandValue: renameDraft,
-        onBrandChange: setRenameDraft,
-        onBrandCommit: commitRename,
-        onBrandCancel: cancelRename,
-      }}
+      config={toolConfig}
+      actions={tool.toolbarActions}
       sidebarOpen={sidebarOpen}
       onSidebarChange={setSidebarOpen}
       toolbar={toolbarContent}

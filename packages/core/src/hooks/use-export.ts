@@ -14,7 +14,7 @@ function getAvailableFormats(
 
 /**
  * Hook that provides client-side export functionality. Lazy-loads format-specific
- * exporters (html2canvas, jspdf) on first use so they don't bloat the initial bundle.
+ * exporters (image capture, print) on first use so they don't bloat the initial bundle.
  *
  * @param canvasRef - Ref to the DOM element that should be captured for image/PDF exports.
  * @param config - Tool configuration including which export formats are enabled.
