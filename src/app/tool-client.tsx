@@ -1,14 +1,6 @@
 'use client';
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ComponentType,
-  type ReactNode,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ToolShell, useTool, ImportExport } from '@itsjust/core';
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
 import {
@@ -25,13 +17,6 @@ const MIN_FONT_SIZE = 8;
 const MAX_FONT_SIZE = 72;
 
 export default function ToolClient() {
-  const ToolShellCompat = ToolShell as unknown as ComponentType<Record<string, unknown>> & {
-    Toolbar?: ComponentType<{ children?: ReactNode }>;
-    Body?: ComponentType<{ children?: ReactNode }>;
-    Sidebar?: ComponentType<{ children?: ReactNode }>;
-    Canvas?: ComponentType<{ children?: ReactNode }>;
-    StatusBar?: ComponentType<{ children?: ReactNode }>;
-  };
   const canvasRef = useRef<HTMLDivElement>(null);
   const tool = useTool(notepadTool, canvasRef);
   const setToolData = tool.state.setData;
@@ -60,10 +45,6 @@ export default function ToolClient() {
 
   const handleFontSizeChange = useCallback((delta: number) => {
     setFontSize((prev) => Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, prev + delta)));
-  }, []);
-
-  useEffect(() => {
-    document.title = toolConfig.name;
   }, []);
 
   useEffect(() => {
@@ -195,16 +176,8 @@ export default function ToolClient() {
     </>
   );
 
-  const hasLegacySections = Boolean(
-    ToolShellCompat.Toolbar &&
-    ToolShellCompat.Body &&
-    ToolShellCompat.Sidebar &&
-    ToolShellCompat.Canvas &&
-    ToolShellCompat.StatusBar
-  );
-
   return (
-    <ToolShellCompat
+    <ToolShell
       config={toolConfig}
       actions={toolbarActions}
       sidebarOpen={sidebarOpen}
@@ -213,32 +186,6 @@ export default function ToolClient() {
       sidebar={sidebarContent}
       canvas={canvasContent}
       statusBar={statusBarContent}
-    >
-      {hasLegacySections
-        ? (() => {
-            const ToolbarSection = ToolShellCompat.Toolbar as ComponentType<{
-              children?: ReactNode;
-            }>;
-            const BodySection = ToolShellCompat.Body as ComponentType<{ children?: ReactNode }>;
-            const SidebarSection = ToolShellCompat.Sidebar as ComponentType<{
-              children?: ReactNode;
-            }>;
-            const CanvasSection = ToolShellCompat.Canvas as ComponentType<{ children?: ReactNode }>;
-            const StatusBarSection = ToolShellCompat.StatusBar as ComponentType<{
-              children?: ReactNode;
-            }>;
-            return (
-              <>
-                <ToolbarSection>{toolbarContent}</ToolbarSection>
-                <BodySection>
-                  <SidebarSection>{sidebarContent}</SidebarSection>
-                  <CanvasSection>{canvasContent}</CanvasSection>
-                </BodySection>
-                <StatusBarSection>{statusBarContent}</StatusBarSection>
-              </>
-            );
-          })()
-        : null}
-    </ToolShellCompat>
+    />
   );
 }

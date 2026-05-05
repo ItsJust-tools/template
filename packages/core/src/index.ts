@@ -71,6 +71,8 @@ export { useStorage } from './hooks/use-storage';
 export { useDragAndDropImport } from './hooks/use-drag-and-drop-import';
 /** useRelativeTime — Auto-updating relative time string (e.g. "2m ago"). */
 export { useRelativeTime } from './hooks/use-relative-time';
+/** useKeyboardShortcuts — Register global keyboard shortcuts for a tool. */
+export { useKeyboardShortcuts } from './components/tool-shell/tool-shell-shortcuts';
 /** usePlugins — Organize declarative tool plugins by slot. */
 export { usePlugins } from './hooks/use-plugins';
 
