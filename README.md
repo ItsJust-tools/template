@@ -248,13 +248,13 @@ This section is the **canonical source of truth** for data contracts. All docume
 
 ### Export Formats
 
-| Format | How it works                      | Requires canvas ref |
-| ------ | --------------------------------- | ------------------- |
-| `json` | `serialize(state)` → `.json` file | No                  |
-| `png`  | `html2canvas` → `.png` blob       | Yes                 |
-| `jpeg` | `html2canvas` → `.jpeg` blob      | Yes                 |
-| `webp` | `html2canvas` → `.webp` blob      | Yes                 |
-| `pdf`  | `html2canvas` + `jsPDF` → `.pdf`  | Yes                 |
+| Format | How it works                       | Requires canvas ref |
+| ------ | ---------------------------------- | ------------------- |
+| `json` | `serialize(state)` → `.json` file  | No                  |
+| `png`  | `html-to-image` → `.png` blob      | Yes                 |
+| `jpeg` | `html-to-image` → `.jpeg` blob     | Yes                 |
+| `webp` | `html-to-image` → `.webp` blob     | Yes                 |
+| `pdf`  | `@media print` iframe → `.pdf`     | Yes                 |
 
 Exporters are lazy-loaded. Register them in `src/tool/tool-definition.ts`:
 
@@ -338,7 +338,7 @@ Fix:   Tests run with jsdom by default. Don't change test environment.
 
 Problem: Export produces blank image
 Check:  Is canvasRef attached to the visible element?
-Fix:   Ensure the element is in viewport and not display:none
+Fix:   Ensure the element has a measurable offsetWidth. The exporter temporarily moves the element off-screen to capture full content, so visibility is not required.
 
 Problem: Hydration mismatch
 Check:  Are you reading window/localStorage during render?

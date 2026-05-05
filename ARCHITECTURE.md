@@ -26,7 +26,7 @@
 
 - `useExport()` delegates to `ExportEngine`.
 - `ExportEngine` lazy-loads format exporters.
-- Exporters render canvas via `html2canvas` and return `ExportResult`.
+- Exporters render canvas via `html-to-image` (SVG foreignObject) and return `ExportResult`.
 
 ## Import Path
 

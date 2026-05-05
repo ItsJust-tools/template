@@ -163,8 +163,8 @@ exportTo('png'); // oder jpeg, webp, pdf, json
 
 - `.itsjust.json` — Share-Format (wird automatisch erkannt)
 - `.json` — JSON Export/Import
-- `.png`, `.jpeg`, `.webp` — Bild-Export (html2canvas, lazy-loaded)
-- `.pdf` — PDF-Export (jspdf, lazy-loaded)
+- `.png`, `.jpeg`, `.webp` — Bild-Export (`html-to-image`, lazy-loaded)
+- `.pdf` — PDF-Export (`@media print` iframe, lazy-loaded)
 
 ### ToolShell
 

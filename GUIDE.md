@@ -233,7 +233,7 @@ export default function ToolClient() {
 
 The canvas is where your tool lives. It receives:
 
-- `canvasRef` — needed for PNG/JPEG/WebP/PDF export (html2canvas captures this element)
+- `canvasRef` — needed for PNG/JPEG/WebP/PDF export (`html-to-image` serializes this element into an SVG foreignObject)
 - `state` — current tool state
 - `logic` — tool-specific action creators
 - The default layout is full-space and responsive, so it fills the available viewport instead of simulating an A4 page
@@ -286,13 +286,13 @@ export function ToolSidebar({ state, logic }: ToolSidebarProps) {
 
 ### Supported Formats
 
-| Format | How it works                | Requires canvas ref |
-| ------ | --------------------------- | ------------------- |
-| `json` | `serialize(state)`          | No                  |
-| `png`  | html2canvas + canvas.toBlob | Yes                 |
-| `jpeg` | html2canvas + canvas.toBlob | Yes                 |
-| `webp` | html2canvas + canvas.toBlob | Yes                 |
-| `pdf`  | html2canvas + jsPDF         | Yes                 |
+| Format | How it works                 | Requires canvas ref |
+| ------ | ---------------------------- | ------------------- |
+| `json` | `serialize(state)`           | No                  |
+| `png`  | `html-to-image` → blob       | Yes                 |
+| `jpeg` | `html-to-image` → blob       | Yes                 |
+| `webp` | `html-to-image` → blob       | Yes                 |
+| `pdf`  | `@media print` iframe → PDF  | Yes                 |
 
 Set `exportFormats` in `tool.config.ts` to control which formats appear in the Export dropdown.
 
@@ -573,7 +573,7 @@ export { renderTool, createMockToolState } from './testing';
 
 ### Export produces blank image
 
-Make sure `canvasRef` is attached to the element you want to capture. html2canvas can't capture elements outside the viewport or with `display: none`.
+Make sure `canvasRef` is attached to the element you want to capture. The exporter temporarily moves the element off-screen with unlimited space, so `display: none` is not required — but the element must have a measurable `offsetWidth`.
 
 ### Hydration mismatch
 
