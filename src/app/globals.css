@@ -715,43 +715,6 @@ body {
   }
 }
 
-/* --- Export helper: off-screen styled clone --- */
-
-.export-clone-container {
-  position: fixed;
-  left: -9999px;
-  top: 0;
-  width: auto;
-  height: auto;
-  overflow: visible;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.export-clone-container .notepad-canvas {
-  overflow: visible;
-  height: auto;
-  min-height: 0;
-}
-
-.export-clone-container .notepad-textarea-replacement {
-  display: block;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  width: 100%;
-  max-width: 100%;
-  padding: clamp(1rem, 2.5vw, 2rem);
-  font-family: ui-monospace, Menlo, Monaco, 'Cascadia Code', 'Segoe UI Mono', monospace;
-  line-height: 1.6;
-  color: var(--foreground);
-  background: transparent;
-  border: none;
-  outline: none;
-  margin: 0;
-  box-sizing: border-box;
-}
-
 /* --- Share page states --- */
 
 .share-error {

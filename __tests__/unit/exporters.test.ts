@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   formatExportError,
   throwIfAborted,
-  createStyledClone,
   renderToImage,
   createCanvasExporter,
 } from '@/tool/exporters/utils';
@@ -97,28 +96,6 @@ describe('exporters', () => {
     await expect(renderToImage(el, makeOptions(), 'image/png')).rejects.toThrowError(
       /sensitive elements detected/
     );
-  });
-
-  it('creates a styled clone with textarea replaced by div', () => {
-    const container = document.createElement('div');
-    container.className = 'notepad-canvas';
-    const textarea = document.createElement('textarea');
-    textarea.className = 'notepad-textarea';
-    textarea.value = 'Hello world';
-    container.appendChild(textarea);
-    document.body.appendChild(container);
-
-    const cloneContainer = createStyledClone(container);
-    const clone = cloneContainer.firstElementChild as HTMLElement;
-
-    expect(clone).toBeDefined();
-    expect(clone.querySelector('textarea')).toBeNull();
-    const replacement = clone.querySelector('.notepad-textarea-replacement');
-    expect(replacement).not.toBeNull();
-    expect(replacement?.textContent).toBe('Hello world');
-
-    cloneContainer.remove();
-    container.remove();
   });
 
   it('renders image via html-to-image with correct options', async () => {
