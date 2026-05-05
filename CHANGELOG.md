@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.4] - 2026-05-05
+
+### Added
+
+- Toolbar brand name is now editable inline. Click the name to rename; Enter confirms, Escape cancels. The edited name persists in tool state and syncs to the browser tab title.
+
+### Fixed
+
+- Replaced the complex Settings icon SVG with a cleaner 6-spoke cog design that renders clearly at 16×16 px.
+
 ## [1.2.3] - 2026-05-05
 
 ### Changed

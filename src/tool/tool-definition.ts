@@ -4,7 +4,8 @@ import type { NotepadState } from './types';
 
 function isNotepadState(value: unknown): value is NotepadState {
   if (typeof value !== 'object' || value === null) return false;
-  return typeof (value as { text?: unknown }).text === 'string';
+  const v = value as { text?: unknown; title?: unknown };
+  return typeof v.text === 'string' && (v.title === undefined || typeof v.title === 'string');
 }
 
 export const notepadTool: Tool<NotepadState> = {
@@ -18,9 +19,9 @@ export const notepadTool: Tool<NotepadState> = {
   serialize: (state) => JSON.stringify(state, null, 2),
   deserialize: (data) => {
     if (isNotepadState(data)) {
-      return { success: true, data: { text: data.text } };
+      return { success: true, data: { text: data.text, title: data.title } };
     }
-    return { success: false, error: 'Invalid data format: expected { text: string }' };
+    return { success: false, error: 'Invalid data format: expected { text: string, title?: string }' };
   },
   exporters: [
     { format: 'png', loader: () => import('./exporters/png') },

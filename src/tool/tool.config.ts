@@ -7,7 +7,7 @@ const toolConfig = {
   id: 'simple-notepad',
   name: 'Notepad',
   description: 'A clean, distraction-free notepad. Write, edit, and export your notes instantly.',
-  version: '1.2.3',
+  version: '1.2.4',
   exportFormats: ['json', 'png', 'jpeg', 'webp', 'pdf'],
   features: {
     export: true,

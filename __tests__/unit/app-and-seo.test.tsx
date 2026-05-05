@@ -98,9 +98,13 @@ describe('app and seo', () => {
     });
     expect(notepadTool.deserialize({ nope: true })).toEqual({
       success: false,
-      error: 'Invalid data format: expected { text: string }',
+      error: 'Invalid data format: expected { text: string, title?: string }',
     });
     expect(notepadTool.serialize({ text: 'x' })).toContain('"text": "x"');
+    expect(notepadTool.deserialize({ text: 'x', title: 'My Note' })).toEqual({
+      success: true,
+      data: { text: 'x', title: 'My Note' },
+    });
     const exporters = notepadTool.exporters ?? [];
     expect(exporters).toHaveLength(4);
     const first = exporters[0];

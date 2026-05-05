@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ComponentType,
@@ -41,6 +42,14 @@ export default function ToolClient() {
     () => typeof window !== 'undefined' && window.innerWidth > 768 && toolConfig.features.sidebar
   );
   const [fontSize, setFontSize] = useState(DEFAULT_FONT_SIZE);
+
+  const title = tool.state.data.title?.trim() || toolConfig.name;
+  const [isEditingBrand, setIsEditingBrand] = useState(false);
+  const [brandValue, setBrandValue] = useState(title);
+
+  useEffect(() => {
+    document.title = title;
+  }, [title]);
 
   const handleTextChange = useCallback(
     (text: string) => {
@@ -91,7 +100,7 @@ export default function ToolClient() {
       const shareUrl = url.toString();
       if (navigator.share) {
         try {
-          await navigator.share({ title: toolConfig.name, url: shareUrl });
+          await navigator.share({ title, url: shareUrl });
           showToast('Shared URL ready', 'success');
           return;
         } catch (error) {
@@ -106,7 +115,30 @@ export default function ToolClient() {
     } finally {
       setIsSharing(false);
     }
-  }, [showToast, tool.state.data]);
+  }, [showToast, tool.state.data, title]);
+
+  const toolbarActions = useMemo(
+    () => ({
+      ...tool.toolbarActions,
+      onBrandClick: () => {
+        setBrandValue(title);
+        setIsEditingBrand(true);
+      },
+      isBrandEditing: isEditingBrand,
+      brandValue,
+      onBrandChange: (value: string) => setBrandValue(value),
+      onBrandCommit: () => {
+        const trimmed = brandValue.trim();
+        setToolData((prev) => ({ ...prev, title: trimmed || undefined }));
+        setIsEditingBrand(false);
+      },
+      onBrandCancel: () => {
+        setBrandValue(title);
+        setIsEditingBrand(false);
+      },
+    }),
+    [tool.toolbarActions, isEditingBrand, brandValue, title, setToolData]
+  );
 
   const toolbarContent = (
     <>
@@ -174,7 +206,7 @@ export default function ToolClient() {
   return (
     <ToolShellCompat
       config={toolConfig}
-      actions={tool.toolbarActions}
+      actions={toolbarActions}
       sidebarOpen={sidebarOpen}
       onSidebarChange={setSidebarOpen}
       toolbar={toolbarContent}
