@@ -217,6 +217,7 @@ See [GUIDE.md](./GUIDE.md) for the full walkthrough.
 - **High-contrast mode** with manual toggle plus system contrast preference support
 - **PWA-ready** — Web App Manifest included
 - **Full-space responsive canvas** — uses available viewport space instead of fixed A4-like sizing
+- **Editable toolbar brand name** — click the tool name to rename; persists in state and syncs to the browser tab title
 
 Accessibility is mandatory in this template, not optional. New UI changes must keep keyboard navigation, visible focus states, semantic structure, and screen-reader support intact.
 
@@ -231,7 +232,7 @@ This section is the **canonical source of truth** for data contracts. All docume
   "$schema": "itsjust-tool",
   "toolId": "simple-notepad",
   "version": "1.0",
-  "content": { "text": "...", "fontSize": 16 },
+  "content": { "text": "...", "title": "My Note" },
   "createdAt": "2026-04-22T...",
   "metadata": { "schemaVersion": "1.0" }
 }

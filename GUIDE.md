@@ -203,24 +203,25 @@ export default function ToolClient() {
   const [sidebarOpen, setSidebarOpen] = useState(toolConfig.features.sidebar);
 
   return (
-    <ToolShell config={toolConfig} actions={tool.toolbarActions}>
-      <ToolShell.Toolbar>
-        <ToolToolbar state={tool.state.data} />
-        <ImportExport
-          formats={tool.supportedFormats}
-          onExport={tool.handleExport}
-          onImport={tool.importFromFile}
-        />
-      </ToolShell.Toolbar>
-      <ToolShell.Body>
-        <ToolShell.Sidebar>
-          <ToolSidebar state={tool.state.data} />
-        </ToolShell.Sidebar>
-        <ToolShell.Canvas>
-          <ToolCanvas canvasRef={canvasRef} state={tool.state.data} />
-        </ToolShell.Canvas>
-      </ToolShell.Body>
-    </ToolShell>
+    <ToolShell
+      config={toolConfig}
+      actions={tool.toolbarActions}
+      sidebarOpen={sidebarOpen}
+      onSidebarChange={setSidebarOpen}
+      toolbar={
+        <>
+          <ToolToolbar state={tool.state.data} />
+          <ImportExport
+            formats={tool.supportedFormats}
+            onExport={tool.handleExport}
+            onImport={tool.importFromFile}
+          />
+        </>
+      }
+      sidebar={<ToolSidebar state={tool.state.data} />}
+      canvas={<ToolCanvas canvasRef={canvasRef} state={tool.state.data} />}
+      statusBar={<span>{tool.state.data.markdown.length} chars</span>}
+    />
   );
 }
 ```

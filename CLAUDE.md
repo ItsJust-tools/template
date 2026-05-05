@@ -65,7 +65,7 @@ This section is the **single source of truth** for all data contracts. All code 
   "$schema": "itsjust-tool",
   "toolId": "simple-notepad",
   "version": "1.0",
-  "content": { "text": "...", "fontSize": 16 },
+  "content": { "text": "...", "title": "My Note" },
   "createdAt": "2026-04-22T12:00:00Z",
   "metadata": { "schemaVersion": "1.0" }
 }
