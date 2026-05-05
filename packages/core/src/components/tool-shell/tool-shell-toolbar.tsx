@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useShell } from './tool-shell-context';
-import { UndoIcon, RedoIcon, SettingsIcon, SunIcon, MoonIcon } from './tool-shell-icons';
+import { Undo, Redo, Settings, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../theme-provider/theme-provider';
 import { t } from '../../i18n/strings';
 
@@ -52,8 +52,8 @@ function ThemeToggle() {
       title={resolvedTheme === 'dark' ? 'Light mode (D)' : 'Dark mode (D)'}
     >
       <span className="theme-toggle-icon">
-        <SunIcon className={resolvedTheme === 'dark' ? 'fade-in' : 'fade-out'} />
-        <MoonIcon className={resolvedTheme === 'dark' ? 'fade-out' : 'fade-in'} />
+        <Sun className={resolvedTheme === 'dark' ? 'fade-in' : 'fade-out'} size={16} strokeWidth={1.5} />
+        <Moon className={resolvedTheme === 'dark' ? 'fade-out' : 'fade-in'} size={16} strokeWidth={1.5} />
       </span>
     </button>
   );
@@ -157,7 +157,7 @@ export function Toolbar({ children }: { children?: ReactNode }) {
               disabled={!actions.canUndo}
               onClick={actions.onUndo}
             >
-              <UndoIcon />
+              <Undo size={16} strokeWidth={1.5} />
               <TooltipLabel text={`${t('undo')} (${modKey()}+Z)`} />
             </button>
             <button
@@ -167,7 +167,7 @@ export function Toolbar({ children }: { children?: ReactNode }) {
               disabled={!actions.canRedo}
               onClick={actions.onRedo}
             >
-              <RedoIcon />
+              <Redo size={16} strokeWidth={1.5} />
               <TooltipLabel text={`${t('redo')} (${modKey()}${isMac() ? '+Shift+Z' : '+Y'})`} />
             </button>
             {actions.onReset && (
@@ -190,7 +190,7 @@ export function Toolbar({ children }: { children?: ReactNode }) {
             onClick={toggleSidebar}
             aria-label={sidebarLabel}
           >
-            <SettingsIcon />
+            <Settings size={16} strokeWidth={1.5} />
             <TooltipLabel text={sidebarLabel} />
           </button>
         )}
