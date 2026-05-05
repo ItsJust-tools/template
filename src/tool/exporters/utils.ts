@@ -86,7 +86,7 @@ export async function renderToImage(
       pixelRatio: options.scale ?? 2,
       backgroundColor: options.background ?? '#ffffff',
       cacheBust: true,
-      skipFonts: false,
+      skipFonts: true,
     });
 
     if (!blob) {

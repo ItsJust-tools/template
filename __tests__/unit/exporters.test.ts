@@ -149,7 +149,7 @@ describe('exporters', () => {
       pixelRatio: 3,
       backgroundColor: '#fff',
       cacheBust: true,
-      skipFonts: false,
+      skipFonts: true,
     });
 
     vi.stubGlobal('Image', originalImage);
