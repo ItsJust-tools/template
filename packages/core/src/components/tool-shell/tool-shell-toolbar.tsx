@@ -96,7 +96,7 @@ function ContrastToggle() {
 
 export function Toolbar({ children }: { children?: ReactNode }) {
   const { config, actions, sidebarOpen, toggleSidebar, isMobile } = useShell();
-  const brandText = config.theme?.brand ?? config.name;
+  const brandText = actions.brandValue ?? config.theme?.brand ?? config.name;
   const brandIcon = config.theme?.icon;
   const brandUrl = config.theme?.brandUrl;
 
