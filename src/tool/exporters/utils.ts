@@ -16,43 +16,20 @@ export function throwIfAborted(signal?: AbortSignal): void {
   }
 }
 
-function createExportClone(element: HTMLElement): { clone: HTMLElement; container: HTMLElement } {
-  const container = document.createElement('div');
-  container.style.position = 'fixed';
-  container.style.top = '0';
-  container.style.left = '-9999px';
-  container.style.width = `${element.offsetWidth}px`;
-  container.style.pointerEvents = 'none';
+interface SavedStyle {
+  el: HTMLElement;
+  prop: string;
+  value: string;
+}
 
-  const clone = element.cloneNode(true) as HTMLElement;
+function saveStyle(saved: SavedStyle[], el: HTMLElement, prop: string) {
+  saved.push({ el, prop, value: el.style.getPropertyValue(prop) });
+}
 
-  // Inline computed background so theme context is preserved in the detached clone
-  const computedBg = window.getComputedStyle(element).backgroundColor;
-  if (computedBg && computedBg !== 'rgba(0, 0, 0, 0)' && computedBg !== 'transparent') {
-    clone.style.backgroundColor = computedBg;
+function restoreStyles(saved: SavedStyle[]) {
+  for (const { el, prop, value } of saved) {
+    el.style.setProperty(prop, value);
   }
-
-  // Expand textarea to capture full scrolled content
-  const originalTextarea = element.querySelector('textarea');
-  const clonedTextarea = clone.querySelector('textarea');
-  if (originalTextarea && clonedTextarea) {
-    const ta = clonedTextarea as HTMLTextAreaElement;
-    ta.style.height = `${originalTextarea.scrollHeight}px`;
-    ta.style.minHeight = '0';
-    ta.style.maxHeight = 'none';
-    ta.style.overflow = 'visible';
-    // cloneNode does not copy textarea value
-    ta.value = originalTextarea.value;
-  }
-
-  clone.style.overflow = 'visible';
-  clone.style.height = 'auto';
-  clone.style.minHeight = '0';
-
-  container.appendChild(clone);
-  document.body.appendChild(container);
-
-  return { clone, container };
 }
 
 export async function renderToImage(
@@ -67,12 +44,41 @@ export async function renderToImage(
     }
   }
 
-  const { clone, container } = createExportClone(element);
+  throwIfAborted(options.signal);
+
+  const saved: SavedStyle[] = [];
+
+  // Temporarily expand the element so full scrolled content is visible
+  saveStyle(saved, element, 'overflow');
+  saveStyle(saved, element, 'height');
+  saveStyle(saved, element, 'min-height');
+  element.style.overflow = 'visible';
+  element.style.height = 'auto';
+  element.style.minHeight = '0';
+
+  // Inline computed background so theme survives SVG serialization
+  const computedBg = window.getComputedStyle(element).backgroundColor;
+  if (computedBg && computedBg !== 'rgba(0, 0, 0, 0)' && computedBg !== 'transparent') {
+    saveStyle(saved, element, 'background-color');
+    element.style.backgroundColor = computedBg;
+  }
+
+  // Expand textarea to its full scroll height
+  const textarea = element.querySelector('textarea');
+  if (textarea) {
+    const ta = textarea as HTMLTextAreaElement;
+    saveStyle(saved, ta, 'height');
+    saveStyle(saved, ta, 'min-height');
+    saveStyle(saved, ta, 'max-height');
+    saveStyle(saved, ta, 'overflow');
+    ta.style.height = `${ta.scrollHeight}px`;
+    ta.style.minHeight = '0';
+    ta.style.maxHeight = 'none';
+    ta.style.overflow = 'visible';
+  }
 
   try {
-    throwIfAborted(options.signal);
-
-    const blob = await toBlob(clone, {
+    const blob = await toBlob(element, {
       pixelRatio: options.scale ?? 2,
       cacheBust: true,
       skipFonts: true,
@@ -102,7 +108,7 @@ export async function renderToImage(
 
     return canvas;
   } finally {
-    container.remove();
+    restoreStyles(saved);
   }
 }
 

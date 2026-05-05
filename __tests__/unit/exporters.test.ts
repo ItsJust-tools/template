@@ -128,8 +128,8 @@ describe('exporters', () => {
       cacheBust: true,
       skipFonts: true,
     });
-    // Clone is passed, not the original element
-    expect(firstCall[0]).not.toBe(el);
+    // Original element is passed directly — no clone
+    expect(firstCall[0]).toBe(el);
 
     vi.stubGlobal('Image', originalImage);
   });
@@ -137,7 +137,6 @@ describe('exporters', () => {
   it('expands textarea to capture full scrolled content', async () => {
     const container = document.createElement('div');
     container.className = 'notepad-canvas';
-    Object.defineProperty(container, 'offsetWidth', { value: 300, writable: true });
 
     const textarea = document.createElement('textarea');
     textarea.value = 'Line 1\nLine 2\nLine 3';
@@ -152,14 +151,15 @@ describe('exporters', () => {
 
     await renderToImage(container, makeOptions({ allowSensitiveData: true }));
 
+    // Original textarea was temporarily expanded and then restored
+    expect(textarea.style.height).toBe('');
+    expect(textarea.style.overflow).toBe('');
+
     const firstCall = toBlobMock.mock.calls[0];
     expect(firstCall).toBeDefined();
     if (!firstCall) throw new Error('missing toBlob call');
-    const clone = firstCall[0] as HTMLElement;
-    const clonedTextarea = clone.querySelector('textarea') as HTMLTextAreaElement;
-    expect(clonedTextarea.style.height).toBe('600px');
-    expect(clonedTextarea.style.overflow).toBe('visible');
-    expect(clonedTextarea.value).toBe('Line 1\nLine 2\nLine 3');
+    // Element passed to toBlob is the original container
+    expect(firstCall[0]).toBe(container);
 
     vi.stubGlobal('Image', originalImage);
     container.remove();
