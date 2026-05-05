@@ -16,6 +16,45 @@ export function throwIfAborted(signal?: AbortSignal): void {
   }
 }
 
+function createExportClone(element: HTMLElement): { clone: HTMLElement; container: HTMLElement } {
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.top = '0';
+  container.style.left = '-9999px';
+  container.style.width = `${element.offsetWidth}px`;
+  container.style.pointerEvents = 'none';
+
+  const clone = element.cloneNode(true) as HTMLElement;
+
+  // Inline computed background so theme context is preserved in the detached clone
+  const computedBg = window.getComputedStyle(element).backgroundColor;
+  if (computedBg && computedBg !== 'rgba(0, 0, 0, 0)' && computedBg !== 'transparent') {
+    clone.style.backgroundColor = computedBg;
+  }
+
+  // Expand textarea to capture full scrolled content
+  const originalTextarea = element.querySelector('textarea');
+  const clonedTextarea = clone.querySelector('textarea');
+  if (originalTextarea && clonedTextarea) {
+    const ta = clonedTextarea as HTMLTextAreaElement;
+    ta.style.height = `${originalTextarea.scrollHeight}px`;
+    ta.style.minHeight = '0';
+    ta.style.maxHeight = 'none';
+    ta.style.overflow = 'visible';
+    // cloneNode does not copy textarea value
+    ta.value = originalTextarea.value;
+  }
+
+  clone.style.overflow = 'visible';
+  clone.style.height = 'auto';
+  clone.style.minHeight = '0';
+
+  container.appendChild(clone);
+  document.body.appendChild(container);
+
+  return { clone, container };
+}
+
 export async function renderToImage(
   element: HTMLElement,
   options: ExportOptions
@@ -28,38 +67,43 @@ export async function renderToImage(
     }
   }
 
-  throwIfAborted(options.signal);
+  const { clone, container } = createExportClone(element);
 
-  const blob = await toBlob(element, {
-    pixelRatio: options.scale ?? 2,
-    backgroundColor: options.background ?? '#ffffff',
-    cacheBust: true,
-    skipFonts: true,
-  });
+  try {
+    throwIfAborted(options.signal);
 
-  if (!blob) {
-    throw new Error('Failed to create image blob');
+    const blob = await toBlob(clone, {
+      pixelRatio: options.scale ?? 2,
+      cacheBust: true,
+      skipFonts: true,
+    });
+
+    if (!blob) {
+      throw new Error('Failed to create image blob');
+    }
+
+    const canvas = document.createElement('canvas');
+    const img = new Image();
+
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(blob);
+    });
+
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Failed to get canvas context');
+    }
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(img.src);
+
+    return canvas;
+  } finally {
+    container.remove();
   }
-
-  const canvas = document.createElement('canvas');
-  const img = new Image();
-
-  await new Promise<void>((resolve, reject) => {
-    img.onload = () => resolve();
-    img.onerror = () => reject(new Error('Failed to load image'));
-    img.src = URL.createObjectURL(blob);
-  });
-
-  canvas.width = img.naturalWidth;
-  canvas.height = img.naturalHeight;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    throw new Error('Failed to get canvas context');
-  }
-  ctx.drawImage(img, 0, 0);
-  URL.revokeObjectURL(img.src);
-
-  return canvas;
 }
 
 export function createCanvasExporter(

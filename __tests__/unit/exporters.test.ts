@@ -101,6 +101,7 @@ describe('exporters', () => {
   it('renders image via html-to-image with correct options', async () => {
     const el = document.createElement('div');
     el.className = 'notepad-canvas';
+    Object.defineProperty(el, 'offsetWidth', { value: 300, writable: true });
 
     // Mock html-to-image to return a simple blob
     toBlobMock.mockResolvedValue(new Blob(['fake-image'], { type: 'image/png' }));
@@ -111,7 +112,7 @@ describe('exporters', () => {
 
     const result = await renderToImage(
       el,
-      makeOptions({ allowSensitiveData: true, scale: 3, background: '#fff' }),
+      makeOptions({ allowSensitiveData: true, scale: 3 }),
       'image/png'
     );
 
@@ -124,12 +125,44 @@ describe('exporters', () => {
     if (!firstCall) throw new Error('missing toBlob call');
     expect(firstCall[1]).toMatchObject({
       pixelRatio: 3,
-      backgroundColor: '#fff',
       cacheBust: true,
       skipFonts: true,
     });
+    // Clone is passed, not the original element
+    expect(firstCall[0]).not.toBe(el);
 
     vi.stubGlobal('Image', originalImage);
+  });
+
+  it('expands textarea to capture full scrolled content', async () => {
+    const container = document.createElement('div');
+    container.className = 'notepad-canvas';
+    Object.defineProperty(container, 'offsetWidth', { value: 300, writable: true });
+
+    const textarea = document.createElement('textarea');
+    textarea.value = 'Line 1\nLine 2\nLine 3';
+    Object.defineProperty(textarea, 'scrollHeight', { value: 600, writable: true });
+    container.appendChild(textarea);
+    document.body.appendChild(container);
+
+    toBlobMock.mockResolvedValue(new Blob(['fake-image'], { type: 'image/png' }));
+
+    const originalImage = globalThis.Image;
+    vi.stubGlobal('Image', mockImageClass(200, 100));
+
+    await renderToImage(container, makeOptions({ allowSensitiveData: true }));
+
+    const firstCall = toBlobMock.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    if (!firstCall) throw new Error('missing toBlob call');
+    const clone = firstCall[0] as HTMLElement;
+    const clonedTextarea = clone.querySelector('textarea') as HTMLTextAreaElement;
+    expect(clonedTextarea.style.height).toBe('600px');
+    expect(clonedTextarea.style.overflow).toBe('visible');
+    expect(clonedTextarea.value).toBe('Line 1\nLine 2\nLine 3');
+
+    vi.stubGlobal('Image', originalImage);
+    container.remove();
   });
 
   it('creates image exporter success and failure results', async () => {

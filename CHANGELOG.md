@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-05-05
+
+### Fixed
+
+- Image export now preserves the actual theme background color instead of forcing white. Uses computed styles from the live element.
+- Image export now captures the full scrolled textarea content by expanding clone height to `scrollHeight`.
+- Fixed `html-to-image` font embedding crash (`skipFonts: true`) that caused exports to fail silently in production.
+- Fixed blank exports caused by off-screen manual clone collapsing due to missing layout context.
+
 ### Changed
 
 - PDF export now attempts DOM-based rendering first and only falls back to raster image embedding when needed.
