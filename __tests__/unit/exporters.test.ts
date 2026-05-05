@@ -99,9 +99,12 @@ describe('exporters', () => {
   });
 
   it('renders image via html-to-image with correct options', async () => {
+    const wrapper = document.createElement('div');
     const el = document.createElement('div');
     el.className = 'notepad-canvas';
     Object.defineProperty(el, 'offsetWidth', { value: 300, writable: true });
+    wrapper.appendChild(el);
+    document.body.appendChild(wrapper);
 
     // Mock html-to-image to return a simple blob
     toBlobMock.mockResolvedValue(new Blob(['fake-image'], { type: 'image/png' }));
@@ -128,8 +131,10 @@ describe('exporters', () => {
       cacheBust: true,
       skipFonts: true,
     });
-    // Original element is passed directly — no clone
+    // Original element is passed to toBlob (moved into off-screen container)
     expect(firstCall[0]).toBe(el);
+    // Element is restored to its original position after export
+    expect(el.parentNode).toBe(wrapper);
 
     vi.stubGlobal('Image', originalImage);
   });
@@ -137,6 +142,7 @@ describe('exporters', () => {
   it('expands textarea to capture full scrolled content', async () => {
     const container = document.createElement('div');
     container.className = 'notepad-canvas';
+    Object.defineProperty(container, 'offsetWidth', { value: 300, writable: true });
 
     const textarea = document.createElement('textarea');
     textarea.value = 'Line 1\nLine 2\nLine 3';
@@ -153,13 +159,16 @@ describe('exporters', () => {
 
     // Original textarea was temporarily expanded and then restored
     expect(textarea.style.height).toBe('');
+    expect(textarea.style.flex).toBe('');
     expect(textarea.style.overflow).toBe('');
 
     const firstCall = toBlobMock.mock.calls[0];
     expect(firstCall).toBeDefined();
     if (!firstCall) throw new Error('missing toBlob call');
-    // Element passed to toBlob is the original container
+    // Element passed to toBlob is the original container (moved into off-screen container)
     expect(firstCall[0]).toBe(container);
+    // Element is restored to its original position after export
+    expect(container.parentNode).toBe(document.body);
 
     vi.stubGlobal('Image', originalImage);
     container.remove();

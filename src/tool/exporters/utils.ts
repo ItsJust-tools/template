@@ -27,7 +27,7 @@ function saveStyle(saved: SavedStyle[], el: HTMLElement, prop: string) {
 }
 
 function restoreStyles(saved: SavedStyle[]) {
-  for (const { el, prop, value } of saved) {
+  for (const { el, prop, value } of saved.reverse()) {
     el.style.setProperty(prop, value);
   }
 }
@@ -48,7 +48,25 @@ export async function renderToImage(
 
   const saved: SavedStyle[] = [];
 
-  // Temporarily expand the element so full scrolled content is visible
+  // Remember original DOM position so we can move the element back
+  const parent = element.parentNode;
+  const nextSibling = element.nextSibling;
+  const originalWidth = element.offsetWidth;
+
+  // Create an off-screen container with unlimited space
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.top = '0';
+  container.style.left = '-9999px';
+  container.style.width = `${originalWidth}px`;
+  container.style.pointerEvents = 'none';
+  container.style.zIndex = '-1';
+
+  // Move the original element into the off-screen container
+  container.appendChild(element);
+  document.body.appendChild(container);
+
+  // Expand the element so nothing clips
   saveStyle(saved, element, 'overflow');
   saveStyle(saved, element, 'height');
   saveStyle(saved, element, 'min-height');
@@ -67,10 +85,12 @@ export async function renderToImage(
   const textarea = element.querySelector('textarea');
   if (textarea) {
     const ta = textarea as HTMLTextAreaElement;
+    saveStyle(saved, ta, 'flex');
     saveStyle(saved, ta, 'height');
     saveStyle(saved, ta, 'min-height');
     saveStyle(saved, ta, 'max-height');
     saveStyle(saved, ta, 'overflow');
+    ta.style.flex = 'none';
     ta.style.height = `${ta.scrollHeight}px`;
     ta.style.minHeight = '0';
     ta.style.maxHeight = 'none';
@@ -109,6 +129,15 @@ export async function renderToImage(
     return canvas;
   } finally {
     restoreStyles(saved);
+    // Move element back to its original position in the DOM
+    if (parent) {
+      if (nextSibling) {
+        parent.insertBefore(element, nextSibling);
+      } else {
+        parent.appendChild(element);
+      }
+    }
+    container.remove();
   }
 }
 
