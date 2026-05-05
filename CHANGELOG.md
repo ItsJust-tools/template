@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.3] - 2026-05-05
+
+### Changed
+
+- Expanded unit test coverage for exporters: CORS error formatting, abort signal handling, sensitive data blocking, DOM/style restoration on failure, background color inlining, textarea scroll expansion, special character handling, and PDF iframe content verification.
+
 ## [1.2.0] - 2026-05-05
 
 ### Fixed
