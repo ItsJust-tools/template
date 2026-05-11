@@ -51,7 +51,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "husky": "^9.1.7",
-    "jsdom": "^25.0.1",
+    "jsdom": "^29.1.1",
     "prettier": "^3.4.0",
     "sharp": "^0.34.5",
     "tailwindcss": "^4",
