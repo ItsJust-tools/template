@@ -8,7 +8,7 @@ import { StorageManager } from '../engines/storage-manager';
 const HISTORY_KEY = (key: string) => `itsjust:history:${key}`;
 const NAMESPACE_KEY = 'itsjust:storage-namespace';
 
-function getStorageNamespace(): string {
+function initStorageNamespace(): string {
   if (typeof window === 'undefined') return 'default';
   try {
     const existing = localStorage.getItem(NAMESPACE_KEY);
@@ -39,17 +39,18 @@ function getStorageNamespace(): string {
  */
 export function useToolState<T>(initial: T, options: Partial<AutoSaveOptions> = {}): ToolState<T> {
   const opts = useMemo(() => ({ ...defaultAutoSaveOptions, ...options }), [options]);
+  const [storageNamespace] = useState(initStorageNamespace);
   const storage = useMemo(
     () =>
       opts.storageManager ??
-      new StorageManager(`itsjust:${getStorageNamespace()}:${opts.key}`, opts.version ?? '1.0.0'),
-    [opts.key, opts.version, opts.storageManager]
+      new StorageManager(`itsjust:${storageNamespace}:${opts.key}`, opts.version ?? '1.0.0'),
+    [opts.key, opts.version, opts.storageManager, storageNamespace]
   );
   const historyStorage = useMemo(
     () => opts.historyStorage ?? (typeof window !== 'undefined' ? localStorage : undefined),
     [opts.historyStorage]
   );
-  const historyPrefix = opts.historyNamespace ?? getStorageNamespace();
+  const historyPrefix = opts.historyNamespace ?? storageNamespace;
   const [data, setDataInternal] = useState<T>(initial);
   const historyRef = useRef<T[]>([initial]);
   const futureRef = useRef<T[]>([]);

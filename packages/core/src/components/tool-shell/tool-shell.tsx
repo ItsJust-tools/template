@@ -71,10 +71,20 @@ export function ToolShell({
   const sidebarOpen = isControlled ? controlledSidebarOpen : internalSidebarOpen;
 
   const toggleSidebar = useCallback(() => {
+    const wasOpen = sidebarOpen;
     if (isControlled) {
       onSidebarChange?.(!sidebarOpen);
     } else {
       setInternalSidebarOpen((v) => !v);
+    }
+    // Focus restoration: when closing sidebar, return focus to toggle button
+    if (wasOpen) {
+      requestAnimationFrame(() => {
+        const toggleBtn = document.querySelector('[data-sidebar-toggle]');
+        if (toggleBtn instanceof HTMLElement) {
+          toggleBtn.focus();
+        }
+      });
     }
   }, [isControlled, onSidebarChange, sidebarOpen]);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -116,7 +126,7 @@ export function ToolShell({
 
   return (
     <ShellContext.Provider value={shellContextValue}>
-      <div className="tool-shell" data-tool={config.id} data-readonly={readOnly ? 'true' : 'false'}>
+      <div id="main-content" className="tool-shell" data-tool={config.id} data-readonly={readOnly ? 'true' : 'false'}>
         <a href="#tool-canvas" className="skip-link">
           {t('skipToContent')}
         </a>

@@ -197,6 +197,7 @@ export function Toolbar({ children }: { children?: ReactNode }) {
             className="toolbar-btn toolbar-btn-sidebar"
             onClick={toggleSidebar}
             aria-label={sidebarLabel}
+            data-sidebar-toggle
           >
             <Settings size={16} strokeWidth={1.5} />
             <TooltipLabel text={sidebarLabel} />

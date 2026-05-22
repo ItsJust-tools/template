@@ -35,7 +35,7 @@ export function useExport(
     () => (exporters ? Object.fromEntries(exporters.map((e) => [e.format, e.loader])) : undefined),
     [exporters]
   );
-  const engineRef = useRef(createExportEngine(localLoaders));
+  const engine = useMemo(() => createExportEngine(localLoaders), [localLoaders]);
   const [isExporting, setIsExporting] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -54,7 +54,7 @@ export function useExport(
     if (typeof window === 'undefined') return;
     const preload = () => {
       const warm = config.exportFormats.filter((f) => f !== 'json').slice(0, 2);
-      void Promise.all(warm.map((f) => engineRef.current.loadExporter(f)));
+      void Promise.all(warm.map((f) => engine.loadExporter(f)));
     };
     if ('requestIdleCallback' in window) {
       const id = window.requestIdleCallback(preload, { timeout: 1500 });
@@ -107,7 +107,7 @@ export function useExport(
           ...options,
           signal: controller.signal,
         };
-        return await engineRef.current.exportAndDownload(
+        return await engine.exportAndDownload(
           canvasRef.current,
           merged,
           stateSerializer

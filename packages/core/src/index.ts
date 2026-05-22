@@ -71,6 +71,19 @@ export { useStorage } from './hooks/use-storage';
 export { useDragAndDropImport } from './hooks/use-drag-and-drop-import';
 /** useRelativeTime — Auto-updating relative time string (e.g. "2m ago"). */
 export { useRelativeTime } from './hooks/use-relative-time';
+/**
+ * useUrlState — Read compressed state from URL on mount and create share URLs.
+ *
+ * @example
+ * const { createShareUrl, isSharing } = useUrlState({
+ *   toolId: 'my-tool',
+ *   serialize: () => JSON.stringify(state),
+ *   deserialize: (data) => tool.deserialize(data),
+ *   onStateLoaded: (data) => setToolData(data as MyState),
+ *   showToast,
+ * });
+ */
+export { useUrlState } from './hooks/use-url-state';
 /** useKeyboardShortcuts — Register global keyboard shortcuts for a tool. */
 export { useKeyboardShortcuts } from './components/tool-shell/tool-shell-shortcuts';
 /** usePlugins — Organize declarative tool plugins by slot. */

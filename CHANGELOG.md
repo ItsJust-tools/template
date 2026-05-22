@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-05-22
+
+### Added
+
+- **useUrlState hook**: New hook in `@itsjust/core` that reads compressed state from URL query parameters on mount and provides `createShareUrl` for sharing via Web Share API or clipboard. Replaces inline URL state logic in tool-client.tsx with a reusable pattern.
+
+### Fixed
+
+- **Skip-nav link**: Added `id="main-content"` to the ToolShell container so the layout-level skip link (in `src/app/layout.tsx`) correctly targets the main content area.
+- **Render-phase side effect**: `getStorageNamespace()` was reading and writing localStorage during render, violating React's pure render contract. Replaced with `useState` lazy initializer so storage side effects run only during component mount.
+- **Sidebar focus restoration**: When the sidebar closes, focus now returns to the toggle button (`data-sidebar-toggle`) so screen reader users are not left without a focused element.
+- **ExportEngine ref anti-pattern**: `useRef(createExportEngine(...))` replaced with `useMemo(...)` to avoid creating a new engine instance on every render pass.
+
+### Changed
+
+- Bumped `@itsjust/core` to 1.2.0.
+
 ## [1.2.12] - 2026-05-21
 
 ### Changed
