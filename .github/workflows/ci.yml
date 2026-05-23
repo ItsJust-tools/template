@@ -129,10 +129,9 @@ jobs:
             console.log('All code fences have language tags.');
           "
 
-  # ─── Slow optional checks ───
+  # ─── Build and E2E ───
   build-and-e2e:
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck]
     steps:
       - uses: actions/checkout@v4
 
