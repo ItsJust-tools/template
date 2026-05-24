@@ -14,7 +14,7 @@ Single-purpose web tool template built with Next.js App Router. Each tool does O
 - **UI:** React 19, Tailwind CSS 4, shadcn-style components
 - **State:** `useToolState` hook (custom, with undo/redo)
 - **Testing:** Vitest (unit), Playwright (E2E)
-- **Deployment:** Vercel (zero config)
+- **Deployment:** Docker (self-hosted)
 
 ## Monorepo Structure
 
@@ -239,7 +239,7 @@ const shareUrl = `${window.location.origin}${window.location.pathname}?state=<en
 ## Environment Variables
 
 ```bash
-NEXT_PUBLIC_URL=https://your-tool.vercel.app
+NEXT_PUBLIC_URL=https://your-tool.itsjust.tools
 ```
 
 ## Scripts
@@ -400,11 +400,18 @@ These principles guide every UI/UX decision in the template. They are non-negoti
 
 ## Deployment
 
-Push to GitHub → Connect to Vercel → Set env vars → Done.
+Self-hosted via Docker on Frankfurt server. Each tool has a `Dockerfile` for production builds.
 
-No build config needed — `next.config.ts` handles everything.
+```bash
+# Build and run locally
+docker build -t itsjust-tool-name .
+docker run -p 3000:3000 itsjust-tool-name
 
-For static export, uncomment `output: 'export'` and `images: { unoptimized: true }` in `next.config.ts`.
+# Or with docker-compose (production)
+docker compose up -d --build
+```
+
+Environment variables are set in `.env` on the server (see `.env.example`).
 
 ## Agent Workflow Rules
 
