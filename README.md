@@ -1,6 +1,8 @@
 # itsjust — Single-Purpose Tool Template
 
 [![Use this template](https://img.shields.io/badge/Use%20this%20template-2ea043?style=for-the-badge&logo=github&logoColor=white)](https://github.com/ItsJust-tools/template/generate)
+[![CI](https://github.com/ItsJust-tools/template/actions/workflows/ci.yml/badge.svg)](https://github.com/ItsJust-tools/template/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Next.js template for building specialized single-purpose web tools. Each tool does ONE thing well — no bloat, no signups, no confusing menus.
 
