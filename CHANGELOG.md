@@ -8,13 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - **package.json**: Added description, license, and repository URL fields to fix audit issues.
 - **README**: Added CI and License badges.
 
 ### Fixed
+
 - **Build**: Fixed DTS build failure (TS5101: baseUrl deprecation) by adding `ignoreDeprecations: "6.0"` to tsconfigs.
 - **core/package.json**: Fixed export condition order to suppress tsup warnings (types before import/require).
 - Updated all outdated dependencies to latest compatible versions.
+
+### Documentation
+
+- **core**: Added comprehensive JSDoc documentation to all public API types (`ToolConfig`, `ToolState`, `ExportOptions`, `ShareData`, `StorageData`).
+- **core**: Added JSDoc to engine classes (`StorageManager`, `ExportEngine`) with usage examples.
+- **core**: Added JSDoc to hooks (`useRelativeTime`, `useDragAndDropImport`, `useStorage`).
+- **core**: Added JSDoc to barrel re-export files for better IDE discoverability.
+- **core**: Added JSDoc to `ErrorBoundary`, `ToastProvider`, `JsonExporter` components.
 
 ## [1.4.0] - 2026-05-23
 

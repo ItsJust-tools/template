@@ -11,19 +11,29 @@ import {
 } from 'react';
 import { t as tt } from '../../i18n/strings';
 
+/** A single toast notification in the queue. */
 interface Toast {
   id: number;
   message: string;
   type: 'success' | 'error' | 'info';
+  /** True when the exit animation should play before removal. */
   exiting?: boolean;
 }
 
+/** Context value for the toast system. */
 interface ToastContextValue {
+  /** Show a toast notification. */
   toast: (message: string, type?: Toast['type']) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
+/**
+ * SVG icon rendered inside each toast based on its type.
+ * - success: checkmark
+ * - error: circled X
+ * - info: circled info
+ */
 function ToastIcon({ type }: { type: Toast['type'] }) {
   if (type === 'success') {
     return (
@@ -75,12 +85,28 @@ function ToastIcon({ type }: { type: Toast['type'] }) {
   );
 }
 
+/**
+ * Hook to show toast notifications. Must be used within {@link ToastProvider}.
+ *
+ * @example
+ * ```tsx
+ * const { toast } = useToast();
+ * toast('File saved!', 'success');
+ * ```
+ */
 export function useToast() {
   const ctx = useContext(ToastContext);
   if (!ctx) throw new Error('useToast must be used within ToastProvider');
   return ctx;
 }
 
+/**
+ * Context provider for the toast notification system.
+ * Renders a fixed-position overlay with auto-dismissing toasts.
+ *
+ * Toasts auto-dismiss after 3 seconds (2700ms + 300ms exit animation).
+ * Each toast includes a dismiss button for manual closing.
+ */
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());

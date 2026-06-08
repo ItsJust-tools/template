@@ -1,5 +1,11 @@
 import type { Exporter } from '../../types';
 
+/**
+ * Built-in JSON exporter that serializes tool state via the provided
+ * stateSerializer function. Always available without lazy-loading.
+ *
+ * The exporter returns a JSON string directly (no DOM element capture needed).
+ */
 const jsonExporter: Exporter = {
   format: 'json',
   export: async (_element, options, stateSerializer) => {

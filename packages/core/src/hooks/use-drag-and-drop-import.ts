@@ -3,12 +3,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 
+/** Options for the {@link useDragAndDropImport} hook. */
 export interface UseDragAndDropImportOptions {
+  /** Callback invoked when a file is dropped */
   onImport?: (file: File) => void | Promise<unknown>;
+  /** Accepted file formats (extensions like 'json', 'png') for filtering */
   acceptedFormats?: string[];
+  /** Optional target element ref; defaults to `window` */
   targetRef?: RefObject<HTMLElement | null>;
 }
 
+/** Maps MIME types to internal format identifiers for drag-and-drop acceptance checking. */
 const MIME_TO_FORMAT: Record<string, string> = {
   'application/json': 'json',
   'image/png': 'png',
@@ -18,6 +23,22 @@ const MIME_TO_FORMAT: Record<string, string> = {
   'application/pdf': 'pdf',
 };
 
+/**
+ * Hook that provides drag-and-drop file import functionality.
+ * Tracks drag state (visual feedback) and validates dropped files against
+ * a list of accepted formats before calling onImport.
+ *
+ * @param options - Configuration for drag-and-drop behavior
+ * @returns An object with `isDragging` state for UI feedback
+ *
+ * @example
+ * ```tsx
+ * const { isDragging } = useDragAndDropImport({
+ *   acceptedFormats: ['json', 'itsjust'],
+ *   onImport: (file) => handleFile(file),
+ * });
+ * ```
+ */
 export function useDragAndDropImport({
   onImport,
   acceptedFormats,

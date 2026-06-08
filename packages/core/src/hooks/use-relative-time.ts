@@ -11,6 +11,13 @@ const UNITS: { unit: Intl.RelativeTimeFormatUnit; ms: number }[] = [
   { unit: 'second', ms: 1000 },
 ];
 
+/**
+ * Format an ISO 8601 date string as a human-readable relative time string
+ * (e.g. "Saved 2 minutes ago", "Saved just now").
+ *
+ * @param dateIso - ISO 8601 date string or null
+ * @returns Formatted relative time string
+ */
 function formatRelativeTime(dateIso: string | null): string {
   if (!dateIso) return 'Ready';
   const date = new Date(dateIso);
@@ -28,6 +35,19 @@ function formatRelativeTime(dateIso: string | null): string {
   return 'Saved just now';
 }
 
+/**
+ * React hook that returns a live-updating relative time string for a given
+ * ISO date. Re-renders on an interval to keep the display accurate.
+ *
+ * @param dateIso - ISO 8601 date string or null
+ * @returns Human-readable relative time (e.g. "Saved 5 minutes ago")
+ *
+ * @example
+ * ```tsx
+ * const timeAgo = useRelativeTime(state.lastSaved);
+ * return <span>{timeAgo}</span>;
+ * ```
+ */
 export function useRelativeTime(dateIso: string | null): string {
   const [, forceRefresh] = useState(0);
 

@@ -2,6 +2,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
+  /** Optional custom fallback UI shown instead of the default error message. */
   fallback?: ReactNode;
 }
 
@@ -9,6 +10,20 @@ interface ErrorBoundaryState {
   hasError: boolean;
 }
 
+/**
+ * React error boundary that catches rendering errors in child components
+ * and displays a fallback UI instead of crashing the entire page.
+ *
+ * Logs the error details (including component stack) to the console
+ * via `componentDidCatch`.
+ *
+ * @example
+ * ```tsx
+ * <ErrorBoundary fallback={<p>Something went wrong</p>}>
+ *   <MyTool />
+ * </ErrorBoundary>
+ * ```
+ */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);

@@ -1,28 +1,74 @@
 import type { StorageData } from '../types';
 import { compressToUTF16, decompressFromUTF16 } from 'lz-string';
 
+/**
+ * Result status of a storage load operation.
+ * - `'missing'`: No data found for the given key
+ * - `'ok'`: Data loaded and decoded successfully
+ * - `'corrupt'`: Data found but could not be parsed or decompressed
+ */
 export type StorageLoadStatus = 'missing' | 'ok' | 'corrupt';
 
+/**
+ * Typed result from StorageManager.loadEntry.
+ *
+ * @template T - Expected shape of the stored data
+ * @property status - Whether the load succeeded, failed, or the key was absent
+ * @property data - The decoded data on success, or null otherwise
+ */
 export interface StorageLoadResult<T> {
   status: StorageLoadStatus;
   data: T | null;
 }
 
+/**
+ * Manages persistent key-value storage in localStorage with versioning and
+ * automatic compression of large payloads using LZ-String.
+ *
+ * Keys are prefixed to avoid collisions with other applications or tools.
+ * Data is wrapped in a {@link StorageData} envelope that carries version and
+ * timestamp metadata.
+ *
+ * @example
+ * ```ts
+ * const sm = new StorageManager('my-tool');
+ * await sm.save('config', { theme: 'dark' }, '1.0');
+ * const result = sm.loadEntry<{ theme: string }>('config', '1.0');
+ * if (result.status === 'ok') {
+ *   console.log(result.data.theme); // 'dark'
+ * }
+ * ```
+ */
 export class StorageManager {
   private prefix: string;
   private defaultVersion?: string;
   private compressionThresholdBytes: number;
 
+  /**
+   * @param prefix - Namespace prefix for all localStorage keys (default: 'itsjust')
+   * @param defaultVersion - Schema version used when none is explicitly provided (default: '1.0.0')
+   * @param compressionThresholdBytes - Minimum payload size before attempting LZ-String compression (default: 2048)
+   */
   constructor(prefix = 'itsjust', defaultVersion = '1.0.0', compressionThresholdBytes = 2048) {
     this.prefix = prefix;
     this.defaultVersion = defaultVersion;
     this.compressionThresholdBytes = Math.max(0, compressionThresholdBytes);
   }
 
+  /** Build the full prefixed localStorage key. */
   private key(k: string): string {
     return `${this.prefix}:${k}`;
   }
 
+  /**
+   * Persist data to localStorage. Large payloads (> compressionThresholdBytes)
+   * are automatically compressed with LZ-String before storage.
+   *
+   * @param key - Storage key (prefixed internally)
+   * @param data - Data to store (will be JSON-serialized)
+   * @param version - Optional schema version override
+   * @throws If localStorage quota is exceeded or a write error occurs
+   */
   async save<T>(key: string, data: T, version?: string): Promise<void> {
     const serialized = JSON.stringify(data);
     let storedData: unknown = data;
@@ -52,6 +98,14 @@ export class StorageManager {
     }
   }
 
+  /**
+   * Load and decode a stored entry. Handles both plain and LZ-String compressed
+   * data transparently.
+   *
+   * @param key - Storage key (prefixed internally)
+   * @param expectedVersion - Optional version to validate against; mismatches are logged as warnings
+   * @returns A typed result with status and decoded data
+   */
   loadEntry<T>(key: string, expectedVersion?: string): StorageLoadResult<T> {
     const raw = localStorage.getItem(this.key(key));
     if (!raw) return { status: 'missing', data: null };
@@ -79,13 +133,22 @@ export class StorageManager {
     }
   }
 
+  /**
+   * Convenience method that returns just the data payload, or null on any failure.
+   *
+   * @param key - Storage key (prefixed internally)
+   * @param expectedVersion - Optional version to validate against
+   * @returns The decoded data, or null if missing or corrupt
+   */
   load<T>(key: string, expectedVersion?: string): T | null {
     return this.loadEntry<T>(key, expectedVersion).data;
   }
 
+  /** Remove a stored entry from localStorage. */
   remove(key: string): void {
     localStorage.removeItem(this.key(key));
   }
 }
 
+/** Global singleton StorageManager with default settings (`itsjust` prefix). */
 export const storageManager = new StorageManager();
