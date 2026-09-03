@@ -1,6 +1,22 @@
 @import 'tailwindcss';
 @import '@itsjust/core/styles.css';
 
+/*
+ * CSS PERFORMANCE POLICY (issue #128)
+ * -----------------------------------
+ * NEVER use the generic `transition-all` utility (or `transition: all`).
+ * `all` forces the browser to animate expensive layout properties (`width`,
+ * `height`, `margin`, `padding`), triggering composite recalculations and
+ * 60fps frame drops on lower-powered devices.
+ *
+ * Always target specific composite-friendly properties instead:
+ *   - `transition-colors`  -> color, background-color, border-color
+ *   - `transition-opacity` -> opacity
+ *   - `transition-transform` -> transform
+ *
+ * Existing transitions in this codebase follow this rule; keep it that way.
+ */
+
 :root {
   --background: #f1f5f9;
   --foreground: #0f172a;
