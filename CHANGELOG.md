@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Accessibility (WCAG 2.2 AAA)**: Moved the `id="main-content"` skip-link target from the ToolShell container to the tool canvas `<main>` wrapper so the "Skip to content" bypass link (in `src/app/layout.tsx`) jumps keyboard and screen-reader users directly to the primary canvas/input controls, bypassing the header/nav. Updated the internal ToolShell skip link to point to `#main-content`.
 - **Build**: Fixed DTS build failure (TS5101: baseUrl deprecation) by adding `ignoreDeprecations: "6.0"` to tsconfigs.
 - **core/package.json**: Fixed export condition order to suppress tsup warnings (types before import/require).
 - Updated all outdated dependencies to latest compatible versions.
