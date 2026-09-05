@@ -30,6 +30,8 @@ export { defaultFeatures, defaultAutoSaveOptions, formatLabels } from './types';
 // Engines
 /** Engine that loads exporters and triggers client-side downloads. */
 export { ExportEngine, createExportEngine } from './engines/export-engine';
+/** Sanitize generated export filenames against invalid OS characters. */
+export { sanitizeFilename } from './engines/filename';
 /** Manager for namespaced, versioned localStorage persistence. */
 export { StorageManager, storageManager } from './engines/storage-manager';
 
