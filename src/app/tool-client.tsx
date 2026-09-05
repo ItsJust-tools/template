@@ -85,7 +85,15 @@ export default function ToolClient() {
           showToast('Shared URL ready', 'success');
           return;
         } catch (error) {
-          if (error instanceof Error && error.name === 'AbortError') return;
+          // AbortError means the user cancelled the native share sheet — expected
+          // user action, suppress it. navigator.share rejects with a DOMException
+          // which is not always an instanceof Error.
+          const isAbort =
+            typeof error === 'object' &&
+            error !== null &&
+            'name' in error &&
+            (error as { name?: unknown }).name === 'AbortError';
+          if (isAbort) return;
         }
       }
       await navigator.clipboard.writeText(shareUrl);
