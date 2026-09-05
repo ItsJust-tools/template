@@ -96,8 +96,33 @@ export default function ToolClient() {
           if (isAbort) return;
         }
       }
-      await navigator.clipboard.writeText(shareUrl);
-      showToast('Share URL copied to clipboard', 'success');
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        showToast('Share URL copied to clipboard', 'success');
+      } catch (clipError) {
+        // Fallback for insecure origins, iframes, or permission rejections
+        let success = false;
+        try {
+          const textarea = document.createElement('textarea');
+          textarea.value = shareUrl;
+          textarea.style.position = 'fixed';
+          textarea.style.top = '0';
+          textarea.style.left = '0';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.focus();
+          textarea.select();
+          success = document.execCommand('copy');
+          document.body.removeChild(textarea);
+        } catch (execError) {
+          success = false;
+        }
+        if (success) {
+          showToast('Share URL copied to clipboard', 'success');
+        } else {
+          throw new Error('Clipboard access denied or not supported');
+        }
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create share URL';
       showToast(message, 'error');
