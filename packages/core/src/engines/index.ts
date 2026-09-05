@@ -9,5 +9,6 @@
  * exporters declared on the {@link import('../tool').Tool} definition instead.
  */
 export { ExportEngine, createExportEngine } from './export-engine';
+export { sanitizeFilename } from './filename';
 export { StorageManager, storageManager } from './storage-manager';
 export { registerExporterLoader, exporterLoaders } from './exporters';
