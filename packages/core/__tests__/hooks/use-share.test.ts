@@ -161,6 +161,24 @@ describe('useShare', () => {
     expect(result.current.error).toBeNull();
   });
 
+  it('suppresses a real DOMException AbortError (user cancel)', async () => {
+    // navigator.share rejects with a DOMException, which is not always an
+    // instanceof Error. It must still be suppressed as an expected user action.
+    const domException = new DOMException('Share canceled', 'AbortError');
+    Object.assign(navigator, {
+      share: vi.fn().mockRejectedValue(domException),
+      canShare: vi.fn().mockReturnValue(true),
+    });
+    const { result } = renderHook(() => useShare());
+
+    const success = await act(async () => {
+      return result.current.shareViaWeb({ toolId: 'test', content: '{}' });
+    });
+
+    expect(success).toBe(false);
+    expect(result.current.error).toBeNull();
+  });
+
   it('returns false and sets error on web share failure', async () => {
     Object.assign(navigator, {
       share: vi.fn().mockRejectedValue(new Error('Share failed')),

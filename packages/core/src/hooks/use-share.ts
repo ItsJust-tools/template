@@ -119,7 +119,16 @@ export function useShare() {
         });
         return true;
       }).catch((err) => {
-        if (!(err instanceof Error) || err.name !== 'AbortError') {
+        // navigator.share rejects with a DOMException named 'AbortError' when the
+        // user cancels the native share sheet. This is an expected user action and
+        // must be suppressed — not surfaced as an error. DOMException is not always
+        // an instanceof Error, so check the name directly.
+        const isAbort =
+          typeof err === 'object' &&
+          err !== null &&
+          'name' in err &&
+          (err as { name?: unknown }).name === 'AbortError';
+        if (!isAbort) {
           const message = err instanceof Error ? err.message : 'Web share failed';
           setError(message);
         }
