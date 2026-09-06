@@ -24,7 +24,8 @@
       "@/*": ["./src/*"],
       "@itsjust/core": ["./packages/core/src"],
       "@itsjust/core/testing": ["./packages/core/src/testing"]
-    }
+    },
+    "noImplicitReturns": true
   },
   "include": [
     "next-env.d.ts",
