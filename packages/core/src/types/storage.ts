@@ -44,6 +44,12 @@ export interface AutoSaveOptions {
   };
   historyStorage?: Pick<Storage, 'getItem' | 'setItem'>;
   historyNamespace?: string;
+  /**
+   * Optional callback invoked when a storage write fails (e.g. QuotaExceededError
+   * in private browsing or low-disk scenarios). Use this to surface a non-intrusive
+   * warning to the user without breaking the state flow.
+   */
+  onStorageWarning?: (reason: 'quota' | 'unavailable') => void;
 }
 
 /** Sensible defaults for auto-save: enabled, 2s debounce, 50 history entries max. */

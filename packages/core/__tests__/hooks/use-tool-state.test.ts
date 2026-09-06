@@ -165,4 +165,81 @@ describe('useToolState', () => {
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Quota exceeded'));
     warnSpy.mockRestore();
   });
+
+  it('invokes onStorageWarning with quota reason on QuotaExceededError', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const onStorageWarning = vi.fn();
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Quota exceeded', 'QuotaExceededError');
+    });
+
+    const { result } = renderHook(() =>
+      useToolState('initial', {
+        key: 'test-warn-quota',
+        enabled: true,
+        debounceMs: 500,
+        onStorageWarning,
+      })
+    );
+
+    act(() => result.current.setData('change'));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+
+    expect(onStorageWarning).toHaveBeenCalledWith('quota');
+    warnSpy.mockRestore();
+  });
+
+  it('invokes onStorageWarning with unavailable reason on SecurityError', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const onStorageWarning = vi.fn();
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Storage disabled', 'SecurityError');
+    });
+
+    const { result } = renderHook(() =>
+      useToolState('initial', {
+        key: 'test-warn-security',
+        enabled: true,
+        debounceMs: 500,
+        onStorageWarning,
+      })
+    );
+
+    act(() => result.current.setData('change'));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+
+    expect(onStorageWarning).toHaveBeenCalledWith('unavailable');
+    warnSpy.mockRestore();
+  });
+
+  it('invokes onStorageWarning when history persistence fails', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const onStorageWarning = vi.fn();
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key: string) => {
+      if (String(key).startsWith('itsjust:history:')) {
+        throw new DOMException('Quota exceeded', 'QuotaExceededError');
+      }
+    });
+
+    const { result } = renderHook(() =>
+      useToolState('initial', {
+        key: 'test-warn-history',
+        enabled: true,
+        debounceMs: 500,
+        onStorageWarning,
+      })
+    );
+
+    act(() => result.current.setData('change'));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+
+    expect(onStorageWarning).toHaveBeenCalledWith('quota');
+    warnSpy.mockRestore();
+  });
 });

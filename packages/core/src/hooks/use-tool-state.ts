@@ -8,6 +8,19 @@ import { StorageManager } from '../engines/storage-manager';
 const HISTORY_KEY = (key: string) => `itsjust:history:${key}`;
 const NAMESPACE_KEY = 'itsjust:storage-namespace';
 
+/**
+ * Classify a storage write error into a stable reason so callers can surface
+ * a user-facing warning. QuotaExceededError (private browsing / low disk) and
+ * SecurityError (storage disabled) are the two most common defensive cases.
+ */
+function classifyStorageError(error: unknown): 'quota' | 'unavailable' {
+  if (error instanceof DOMException) {
+    if (error.name === 'QuotaExceededError') return 'quota';
+    if (error.name === 'SecurityError') return 'unavailable';
+  }
+  return 'unavailable';
+}
+
 function initStorageNamespace(): string {
   if (typeof window === 'undefined') return 'default';
   try {
@@ -114,14 +127,16 @@ export function useToolState<T>(initial: T, options: Partial<AutoSaveOptions> = 
       );
       return true;
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      const reason = classifyStorageError(error);
+      if (reason === 'quota') {
         console.warn(`[useToolState] Quota exceeded persisting history for "${opts.key}"`);
       } else {
         console.warn(`[useToolState] Failed to persist history for "${opts.key}"`, error);
       }
+      opts.onStorageWarning?.(reason);
       return false;
     }
-  }, [opts.key, historyPrefix, historyStorage]);
+  }, [opts.key, historyPrefix, historyStorage, opts.onStorageWarning]);
 
   useEffect(() => {
     if (!opts.enabled) return;
@@ -143,9 +158,11 @@ export function useToolState<T>(initial: T, options: Partial<AutoSaveOptions> = 
         await persistHistory();
         firstDirtyAtRef.current = null;
       } catch (error) {
-        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        const reason = classifyStorageError(error);
+        if (reason === 'quota') {
           console.warn(`[useToolState] Quota exceeded saving state for "${opts.key}"`);
         }
+        opts.onStorageWarning?.(reason);
       } finally {
         setIsSaving(false);
       }
@@ -246,12 +263,13 @@ export function useToolState<T>(initial: T, options: Partial<AutoSaveOptions> = 
       setLastSaved(new Date().toISOString());
       await persistHistory();
       firstDirtyAtRef.current = null;
-    } catch {
+    } catch (error) {
       // storage failure is silent by design — caller can observe isDirty
+      opts.onStorageWarning?.(classifyStorageError(error));
     } finally {
       setIsSaving(false);
     }
-  }, [opts.key, opts.version, data, persistHistory, storage]);
+  }, [opts.key, opts.version, data, persistHistory, storage, opts.onStorageWarning]);
 
   return {
     data,
