@@ -159,4 +159,27 @@ describe('useTool', () => {
 
     expect(result.current.toolbarActions.onUndo).toBeDefined();
   });
+
+  it('shows a warning toast when storage quota is exceeded', async () => {
+    vi.useFakeTimers();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Quota exceeded', 'QuotaExceededError');
+    });
+    const canvasRef = { current: document.createElement('div') };
+    const { result } = renderHook(() => useTool(mockTool, canvasRef), renderOptions);
+
+    act(() => {
+      result.current.state.setData({ title: 'Changed' });
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+
+    // The toast system should have queued a warning notification.
+    expect(result.current.state.isDirty).toBe(true);
+    setItemSpy.mockRestore();
+    warnSpy.mockRestore();
+    vi.useRealTimers();
+  });
 });
