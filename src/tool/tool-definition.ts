@@ -1,35 +1,47 @@
-import type { Tool } from '@itsjust/core';
-import toolConfig from './tool.config';
-import type { NotepadState } from './types';
+import { ToolDefinition } from '@itsjust/core';
+import { ToolState, ConversionMode } from './types';
+import yaml from 'js-yaml';
 
-function isNotepadState(value: unknown): value is NotepadState {
-  if (typeof value !== 'object' || value === null) return false;
-  const v = value as { text?: unknown; title?: unknown };
-  return typeof v.text === 'string' && (v.title === undefined || typeof v.title === 'string');
-}
+export class YamlToJsonToolDefinition implements ToolDefinition<ToolState> {
+  initialState: ToolState = {
+    input: 'name: John Doe\nage: 30\nskills:\n  - JavaScript\n  - TypeScript\nactive: true',
+    output: '',
+    mode: 'yaml-to-json',
+    indent: 2,
+    error: null,
+    autoConvert: true,
+  };
 
-export const notepadTool: Tool<NotepadState> = {
-  id: toolConfig.id,
-  name: toolConfig.name,
-  version: toolConfig.version,
-  config: toolConfig,
-  initialState: {
-    text: '',
-  },
-  serialize: (state) => JSON.stringify(state, null, 2),
-  deserialize: (data) => {
-    if (isNotepadState(data)) {
-      return { success: true, data: { text: data.text, title: data.title } };
+  serialize(state: ToolState): string {
+    return JSON.stringify(state);
+  }
+
+  deserialize(serialized: string): ToolState {
+    try {
+      const parsed = JSON.parse(serialized);
+      return { ...this.initialState, ...parsed };
+    } catch {
+      return this.initialState;
     }
-    return {
-      success: false,
-      error: 'Invalid data format: expected { text: string, title?: string }',
-    };
-  },
-  exporters: [
-    { format: 'png', loader: () => import('./exporters/png') },
-    { format: 'jpeg', loader: () => import('./exporters/jpeg') },
-    { format: 'webp', loader: () => import('./exporters/webp') },
-    { format: 'pdf', loader: () => import('./exporters/pdf') },
-  ],
-};
+  }
+
+  convert(state: ToolState): ToolState {
+    if (!state.input.trim()) {
+      return { ...state, output: '', error: null };
+    }
+
+    try {
+      if (state.mode === 'yaml-to-json') {
+        const parsed = yaml.load(state.input);
+        const output = JSON.stringify(parsed, null, state.indent);
+        return { ...state, output, error: null };
+      } else {
+        const parsed = JSON.parse(state.input);
+        const output = yaml.dump(parsed, { indent: state.indent });
+        return { ...state, output, error: null };
+      }
+    } catch (err: any) {
+      return { ...state, output: '', error: err.message || 'Conversion error' };
+    }
+  }
+}

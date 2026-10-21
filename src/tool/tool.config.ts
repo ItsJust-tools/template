@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import type { ToolConfig } from '@itsjust/core';
 import packageJson from '../../package.json';
 
@@ -35,3 +36,14 @@ const toolConfig = {
 } satisfies ToolConfig;
 
 export default toolConfig;
+=======
+import { ToolConfig } from '@itsjust/core';
+
+export const toolConfig: ToolConfig = {
+  id: 'yaml-to-json-converter',
+  name: 'YAML to JSON Converter',
+  description: 'Convert YAML to JSON and JSON to YAML instantly with live syntax validation.',
+  category: 'Converter',
+  version: '1.0.0',
+};
+>>>>>>> Stashed changes
