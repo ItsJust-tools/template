@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { generateJsonLd, generateToolMetadata } from '@/lib/seo';
 import toolConfig from '@/tool/tool.config';
 import { getPublicSiteUrl, templateMetadata } from '@/tool/template-metadata';
-import { notepadTool } from '@/tool/tool-definition';
+import { notepadTool } from '@/tool/notepad-state';
 import { ToolCanvas } from '@/tool/components/tool-canvas';
 import { ToolSidebar } from '@/tool/components/tool-sidebar';
 import { ToolToolbar } from '@/tool/components/tool-toolbar';
@@ -92,20 +92,20 @@ describe('app and seo', () => {
   it('covers tool definition and helper exports', async () => {
     expect(cn('a', undefined, 'b', false, null, 'c')).toBe('a b c');
     expect(getPublicSiteUrl()).toBe('http://localhost:3000');
-    expect(notepadTool.deserialize({ text: 'x' })).toEqual({
+    expect(notepadTool.deserialize({ content: 'x' })).toEqual({
       success: true,
-      data: { text: 'x' },
+      data: { content: 'x', title: '' },
     });
     expect(notepadTool.deserialize({ nope: true })).toEqual({
       success: false,
-      error: 'Invalid data format: expected { text: string, title?: string }',
+      error: 'Invalid data format: expected { content: string, title?: string }',
     });
-    expect(notepadTool.serialize({ text: 'x' })).toContain('"text": "x"');
-    expect(notepadTool.deserialize({ text: 'x', title: 'My Note' })).toEqual({
+    expect(notepadTool.serialize({ content: 'x' })).toContain('"content": "x"');
+    expect(notepadTool.deserialize({ content: 'x', title: 'My Note' })).toEqual({
       success: true,
-      data: { text: 'x', title: 'My Note' },
+      data: { content: 'x', title: 'My Note' },
     });
-    const exporters = notepadTool.exporters ?? [];
+    const exporters = (notepadTool as { exporters?: Array<{ loader: ExporterLoader }> }).exporters ?? [];
     expect(exporters).toHaveLength(4);
     const first = exporters[0];
     expect(first).toBeDefined();

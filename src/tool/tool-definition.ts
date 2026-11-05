@@ -1,31 +1,48 @@
-import { ToolDefinition } from '@itsjust/core';
-import { ToolState, ConversionMode } from './types';
+import type { Tool, DeserializeResult } from '@itsjust/core';
+import toolConfig from './tool.config';
+import type { ToolState, ConversionMode } from './types';
 import yaml from 'js-yaml';
 
-export class YamlToJsonToolDefinition implements ToolDefinition<ToolState> {
-  initialState: ToolState = {
+function isToolState(value: unknown): value is ToolState {
+  if (typeof value !== 'object' || value === null) return false;
+  const v = value as Partial<ToolState>;
+  return (
+    typeof v.input === 'string' &&
+    typeof v.output === 'string' &&
+    (v.mode === 'yaml-to-json' || v.mode === 'json-to-yaml')
+  );
+}
+
+export const yamlToJsonTool: Tool<ToolState> = {
+  id: toolConfig.id,
+  name: toolConfig.name,
+  version: toolConfig.version,
+  config: toolConfig,
+  initialState: {
     input: 'name: John Doe\nage: 30\nskills:\n  - JavaScript\n  - TypeScript\nactive: true',
     output: '',
     mode: 'yaml-to-json',
     indent: 2,
     error: null,
     autoConvert: true,
-  };
-
-  serialize(state: ToolState): string {
-    return JSON.stringify(state);
-  }
-
-  deserialize(serialized: string): ToolState {
-    try {
-      const parsed = JSON.parse(serialized);
-      return { ...this.initialState, ...parsed };
-    } catch {
-      return this.initialState;
+  },
+  serialize: (state) => JSON.stringify(state),
+  deserialize: (data): DeserializeResult<ToolState> => {
+    if (isToolState(data)) {
+      return { success: true, data: data };
     }
-  }
+    return { success: false, error: 'Invalid data format: expected valid converter state' };
+  },
+  exporters: [
+    { format: 'png', loader: () => import('./exporters/png') },
+    { format: 'jpeg', loader: () => import('./exporters/jpeg') },
+    { format: 'webp', loader: () => import('./exporters/webp') },
+    { format: 'pdf', loader: () => import('./exporters/pdf') },
+  ],
+};
 
-  convert(state: ToolState): ToolState {
+/** Convert YAML↔JSON based on state.mode. Not part of the Tool contract. */
+export function convert(state: ToolState): ToolState {
     if (!state.input.trim()) {
       return { ...state, output: '', error: null };
     }
@@ -40,8 +57,30 @@ export class YamlToJsonToolDefinition implements ToolDefinition<ToolState> {
         const output = yaml.dump(parsed, { indent: state.indent });
         return { ...state, output, error: null };
       }
-    } catch (err: any) {
-      return { ...state, output: '', error: err.message || 'Conversion error' };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Conversion error';
+      return { ...state, output: '', error: message };
     }
+}
+
+// Back-compat alias for existing tests using the class-based name.
+export class YamlToJsonToolDefinition {
+  initialState: ToolState = yamlToJsonTool.initialState;
+
+  serialize(state: ToolState): string {
+    return yamlToJsonTool.serialize(state);
+  }
+
+  deserialize(serialized: string): DeserializeResult<ToolState> {
+    try {
+      const parsed: unknown = JSON.parse(serialized);
+      return yamlToJsonTool.deserialize(parsed);
+    } catch {
+      return { success: false, error: 'Invalid data format: expected valid converter state' };
+    }
+  }
+
+  convert(state: ToolState): ToolState {
+    return convert(state);
   }
 }

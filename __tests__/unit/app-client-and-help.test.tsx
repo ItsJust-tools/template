@@ -61,13 +61,16 @@ vi.mock('@/tool', () => ({
     theme: { brand: 'Notepad' },
   },
   templateBaseVersion: '1.1.0',
-  notepadTool: {
-    serialize: (state: unknown) => JSON.stringify(state),
-    deserialize: () => ({ success: true, data: { text: 'From Shared Url' } }),
-  },
   ToolCanvas: ({ text }: { text: string }) => <div>canvas:{text}</div>,
   ToolToolbar: () => <div>toolbar</div>,
   ToolSidebar: ({ text }: { text: string }) => <div>sidebar:{text}</div>,
+}));
+
+vi.mock('@/tool/notepad-state', () => ({
+  notepadTool: {
+    serialize: (state: unknown) => JSON.stringify(state),
+    deserialize: () => ({ success: true, data: { content: 'From Shared Url', title: '' } }),
+  },
 }));
 
 describe('app client and help page', () => {
