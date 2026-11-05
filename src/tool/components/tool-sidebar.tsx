@@ -7,13 +7,13 @@ interface ToolSidebarProps {
 }
 
 function countWords(text: string): number {
-  const trimmed = text.trim();
+  const trimmed = (text ?? '').trim();
   if (!trimmed) return 0;
   return trimmed.split(/\s+/).length;
 }
 
 function countChars(text: string): number {
-  return text.length;
+  return (text ?? '').length;
 }
 
 function countLines(text: string): number {
@@ -25,7 +25,7 @@ export function ToolSidebar({ text, fontSize, onFontSizeChange }: ToolSidebarPro
   const words = countWords(text);
   const chars = countChars(text);
   const lines = countLines(text);
-  const charsNoSpaces = text.replace(/\s/g, '').length;
+  const charsNoSpaces = (text ?? '').replace(/\s/g, '').length;
 
   return (
     <div className="notepad-sidebar">

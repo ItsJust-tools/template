@@ -565,7 +565,8 @@ export type {
 };
 
 // Testing
-export { renderTool, createMockToolState } from './testing';
+export { renderTool, createMockToolState, testConfig } from './testing';
+export { MockThemeProvider, MockIntlProvider } from './testing';
 ```
 
 ---

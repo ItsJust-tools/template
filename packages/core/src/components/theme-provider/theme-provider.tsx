@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { ToolTheme } from '../../types';
 
-type Theme = 'light' | 'dark' | 'system';
+export type Theme = 'light' | 'dark' | 'system';
 type ContrastMode = 'normal' | 'more' | 'system';
 
 interface ThemeContextValue {

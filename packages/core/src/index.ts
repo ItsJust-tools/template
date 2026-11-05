@@ -5,7 +5,7 @@
  */
 
 // Tool contract
-export type { Tool, ToolExporterDefinition } from './tool';
+export type { Tool, ToolExporterDefinition, DeserializeResult } from './tool';
 
 // Types
 export type {
@@ -24,6 +24,7 @@ export type {
   ToolState,
   ShortcutDef,
   ShortcutGroup,
+  ToolPlugin,
 } from './types';
 export { defaultFeatures, defaultAutoSaveOptions, formatLabels } from './types';
 
@@ -34,6 +35,9 @@ export { ExportEngine, createExportEngine } from './engines/export-engine';
 export { sanitizeFilename } from './engines/filename';
 /** Manager for namespaced, versioned localStorage persistence. */
 export { StorageManager, storageManager } from './engines/storage-manager';
+export type { StorageLoadResult } from './engines/storage-manager';
+/** Theme type used by ThemeProvider / useTheme. */
+export type { Theme } from './components/theme-provider/theme-provider';
 
 // Hooks
 /**
