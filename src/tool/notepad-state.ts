@@ -21,23 +21,31 @@ export const notepadTool = {
     { format: 'pdf', loader: () => import('./exporters/pdf') },
   ] as ToolExporterDefinition[],
   deserialize: (data: unknown) => {
-    if (
-      typeof data === 'object' &&
-      data !== null &&
-      typeof (data as { content?: unknown }).content === 'string'
-    ) {
-      const d = data as { content: string; title?: unknown };
+    try {
+      if (
+        typeof data === 'object' &&
+        data !== null &&
+        typeof (data as { content?: unknown }).content === 'string'
+      ) {
+        const d = data as { content: string; title?: unknown };
+        return {
+          success: true as const,
+          data: {
+            content: d.content,
+            title: typeof d.title === 'string' ? d.title : '',
+          } as NotepadState,
+        };
+      }
       return {
-        success: true as const,
-        data: {
-          content: d.content,
-          title: typeof d.title === 'string' ? d.title : '',
-        } as NotepadState,
+        success: false as const,
+        error: 'Invalid data format: expected { content: string, title?: string }',
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Deserialization error';
+      return {
+        success: false as const,
+        error: `Failed to deserialize state: ${message}`,
       };
     }
-    return {
-      success: false as const,
-      error: 'Invalid data format: expected { content: string, title?: string }',
-    };
   },
 };

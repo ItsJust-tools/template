@@ -28,10 +28,15 @@ export const yamlToJsonTool: Tool<ToolState> = {
   },
   serialize: (state) => JSON.stringify(state),
   deserialize: (data): DeserializeResult<ToolState> => {
-    if (isToolState(data)) {
-      return { success: true, data: data };
+    try {
+      if (isToolState(data)) {
+        return { success: true, data: data };
+      }
+      return { success: false, error: 'Invalid data format: expected valid converter state' };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Deserialization error';
+      return { success: false, error: `Failed to deserialize state: ${message}` };
     }
-    return { success: false, error: 'Invalid data format: expected valid converter state' };
   },
   exporters: [
     { format: 'png', loader: () => import('./exporters/png') },
