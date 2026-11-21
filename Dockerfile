@@ -1,10 +1,11 @@
 FROM node:22-alpine AS base
+RUN npm install -g npm@11.19.1
 WORKDIR /app
 
 FROM base AS deps
 COPY package.json package-lock.json ./
 COPY packages/core/package.json ./packages/core/package.json
-RUN npm ci --legacy-peer-deps
+RUN npm ci
 
 FROM base AS builder
 ENV NODE_ENV=production
