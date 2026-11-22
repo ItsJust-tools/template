@@ -69,10 +69,7 @@ export function useTool<TState>(
   const state = useToolState<TState>(tool.initialState, {
     key: canonicalId,
     onStorageWarning: (reason) => {
-      toast(
-        reason === 'quota' ? t('storageQuotaExceeded') : t('storageUnavailable'),
-        'error'
-      );
+      toast(reason === 'quota' ? t('storageQuotaExceeded') : t('storageUnavailable'), 'error');
     },
   });
   const { exportTo, abortExport, supportedFormats, isExporting } = useExport(

@@ -147,7 +147,9 @@ describe('resultText', () => {
       '200'
     );
     expect(
-      resultText(state({ mode: 'addsub', addSubValue: '250', addSubPercent: '20', addSubOp: 'add' }))
+      resultText(
+        state({ mode: 'addsub', addSubValue: '250', addSubPercent: '20', addSubOp: 'add' })
+      )
     ).toBe('300');
     expect(resultText(state({ mode: 'compound', compoundA: '20', compoundB: '30' }))).toBe('6%');
   });
@@ -156,7 +158,9 @@ describe('resultText', () => {
     expect(resultText(state({ mode: 'of', percentageOf: '', ofBase: '150' }))).toBeNull();
     expect(resultText(state({ mode: 'change', changeFrom: 'abc', changeTo: '100' }))).toBeNull();
     expect(resultText(state({ mode: 'change', changeFrom: '0', changeTo: '100' }))).toBeNull();
-    expect(resultText(state({ mode: 'reverse', reversePart: '10', reversePercent: '0' }))).toBeNull();
+    expect(
+      resultText(state({ mode: 'reverse', reversePart: '10', reversePercent: '0' }))
+    ).toBeNull();
   });
 });
 

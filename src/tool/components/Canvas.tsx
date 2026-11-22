@@ -254,7 +254,10 @@ export const Canvas: React.FC<CanvasProps> = ({ state, onChange, onSaveHistory }
                   : '? undefined (division by zero)'}
           </span>
         ) : null}
-        <span className="mt-2 block text-xs text-gray-600 dark:text-gray-300" data-testid="result-summary">
+        <span
+          className="mt-2 block text-xs text-gray-600 dark:text-gray-300"
+          data-testid="result-summary"
+        >
           {result === null ? 'Enter valid inputs' : 'Copy the result or save it below.'}
         </span>
         {result ? (

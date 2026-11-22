@@ -11,7 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **BPM Tap Tempo (v1.0.0)**: First release — tap-tempo BPM computation with sliding tap window, 2s idle reset, interval statistics with min/max confidence range, preset tempo grid (60/90/120/150/180), Web Audio click feedback, clipboard copy, keyboard shortcuts, shareable URL state, and .itsjust.json import/export.
 
-
 ### Added
 
 - **package.json**: Added description, license, and repository URL fields to fix audit issues.

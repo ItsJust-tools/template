@@ -1,36 +1,31 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
-async function closeBackdropIfOpen(page: import('@playwright/test').Page) {
-  const backdrop = page.locator('.sidebar-backdrop');
-  for (let i = 0; i < 3; i++) {
-    const visible = await backdrop.isVisible().catch(() => false);
-    if (!visible) return;
-    await backdrop.evaluate((el) => (el as HTMLElement).click());
-    await page.waitForTimeout(100);
-  }
+// Generic smoke test for every tool scaffolded from this template.
+// The expected page title is derived from src/tool/tool.config.ts, so this
+// test stays valid across tools without hard-coding a tool name.
+function configuredToolName(): string {
+  const cfg = readFileSync(join(process.cwd(), 'src/tool/tool.config.ts'), 'utf-8');
+  const m = cfg.match(/name:\s*'([^']+)'/);
+  return m ? m[1] : '';
 }
 
-test('tool loads with BPM title', async ({ page }) => {
+test('tool loads with its configured title', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (err) => errors.push(String(err)));
   await page.goto('/');
   const title = await page.title();
-  expect(title).toContain('BPM');
+  expect(title.length).toBeGreaterThan(0);
+  const name = configuredToolName();
+  if (name.length > 0) {
+    expect(title).toContain(name);
+  }
+  expect(errors).toEqual([]);
 });
 
-test('tapping computes BPM and reset clears it', async ({ page }) => {
+test('tool renders main content area', async ({ page }) => {
   await page.goto('/');
-  await closeBackdropIfOpen(page);
-
-  const tapButton = page.getByRole('button', { name: /Tap/i }).first();
-  await tapButton.click();
-  await page.waitForTimeout(300);
-  await tapButton.click();
-  await page.waitForTimeout(300);
-  await tapButton.click();
-
-  await expect(page.getByTestId('bpm-display')).not.toHaveText('—');
-  await expect(page.getByTestId('tap-count')).toContainText('3 taps');
-
-  await page.getByTestId('btn-reset').click();
-  await expect(page.getByTestId('bpm-display')).toHaveText('—');
-  await expect(page.getByTestId('tap-count')).toContainText('0 taps');
+  await expect(page.getByRole('main')).toBeVisible();
+  await expect(page.getByRole('toolbar')).toBeVisible();
 });

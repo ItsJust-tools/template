@@ -143,7 +143,12 @@ describe('app and seo', () => {
   it('renders tool components', () => {
     render(
       <>
-        <Toolbar state={{ ...BASE_DEFAULT_STATE }} onChange={() => {}} onClear={() => {}} onCopy={() => {}} />
+        <Toolbar
+          state={{ ...BASE_DEFAULT_STATE }}
+          onChange={() => {}}
+          onClear={() => {}}
+          onCopy={() => {}}
+        />
         <Sidebar state={{ ...BASE_DEFAULT_STATE }} onChange={() => {}} />
         <Canvas
           state={{ ...BASE_DEFAULT_STATE, mode: 'of', percentageOf: '20', ofBase: '150' }}

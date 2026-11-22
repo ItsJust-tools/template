@@ -105,7 +105,12 @@ export default function ToolClient() {
 
   const toolbarContent = (
     <>
-      <Toolbar state={state} onChange={(next) => setToolData(() => next)} onClear={() => setToolData((prev) => ({ ...prev, history: [] }))} onCopy={() => void handleCopyResult()} />
+      <Toolbar
+        state={state}
+        onChange={(next) => setToolData(() => next)}
+        onClear={() => setToolData((prev) => ({ ...prev, history: [] }))}
+        onCopy={() => void handleCopyResult()}
+      />
       <ImportExport
         formats={tool.supportedFormats}
         onExport={tool.handleExport}
@@ -124,7 +129,12 @@ export default function ToolClient() {
       <Canvas
         state={state}
         onChange={(next) => setToolData(() => next)}
-        onSaveHistory={(text) => setToolData((prev) => ({ ...prev, history: [{ text, createdAt: new Date().toISOString() }, ...prev.history].slice(0, 20) }))}
+        onSaveHistory={(text) =>
+          setToolData((prev) => ({
+            ...prev,
+            history: [{ text, createdAt: new Date().toISOString() }, ...prev.history].slice(0, 20),
+          }))
+        }
       />
     </div>
   );

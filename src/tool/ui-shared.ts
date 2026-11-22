@@ -11,5 +11,7 @@ export const MODES: { value: Mode; label: string; hint: string }[] = [
 export function isState(value: unknown): value is ToolState {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Partial<ToolState>;
-  return typeof v.mode === 'string' && typeof v.percentageOf === 'string' && DEFAULT_STATE !== undefined;
+  return (
+    typeof v.mode === 'string' && typeof v.percentageOf === 'string' && DEFAULT_STATE !== undefined
+  );
 }

@@ -18,12 +18,12 @@ Tap in rhythm with a song and get an instant BPM estimate. A practical tempo-tap
 
 ## Keyboard shortcuts
 
-| Key | Action |
-| --- | ------ |
-| `Space` / `T` | Tap |
-| `R` | Reset tap sequence |
-| `C` | Copy BPM |
-| `K` | Toggle audio click |
+| Key           | Action             |
+| ------------- | ------------------ |
+| `Space` / `T` | Tap                |
+| `R`           | Reset tap sequence |
+| `C`           | Copy BPM           |
+| `K`           | Toggle audio click |
 
 ## Development
 
