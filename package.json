@@ -63,7 +63,7 @@
     "@vitest/coverage-v8": "^4.1.11",
     "depcheck": "^1.4.7",
     "eslint": "9.39.2",
-    "eslint-config-next": "^16.2.9",
+    "eslint-config-next": "^16.4.6",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "lint-staged": "^17.0.7",
